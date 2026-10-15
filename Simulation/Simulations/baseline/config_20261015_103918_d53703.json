@@ -1,0 +1,284 @@
+{
+  "metadata": {
+    "description": "Problem 2 beta loop T=130.0C",
+    "ir_version": "1.1",
+    "contract_version": "1.1",
+    "capability_version": "aspen-com-5dc4bc9001d9"
+  },
+  "components": [
+    {
+      "cid": "C2H2",
+      "name": "C2H2",
+      "cas_number": "74-86-2",
+      "database_name": "ACETYLENE"
+    },
+    {
+      "cid": "HCL",
+      "name": "HCL",
+      "cas_number": "7647-01-0",
+      "database_name": "HYDROGEN-CHLORIDE"
+    },
+    {
+      "cid": "C2H3CL",
+      "name": "C2H3CL",
+      "cas_number": "75-01-4",
+      "database_name": "VINYL-CHLORIDE"
+    }
+  ],
+  "property_methods": [
+    {
+      "method_name": "PENG-ROB",
+      "is_basis_method": true
+    }
+  ],
+  "blocks": [
+    {
+      "name": "C1",
+      "type": "Compr"
+    },
+    {
+      "name": "RV1",
+      "type": "Valve"
+    },
+    {
+      "name": "M1",
+      "type": "Mixer"
+    },
+    {
+      "name": "H1",
+      "type": "Heater"
+    },
+    {
+      "name": "R1",
+      "type": "RStoic"
+    },
+    {
+      "name": "H2",
+      "type": "Heater"
+    },
+    {
+      "name": "C2",
+      "type": "Compr"
+    },
+    {
+      "name": "HS1",
+      "type": "Heater"
+    },
+    {
+      "name": "D1",
+      "type": "DSTWU"
+    }
+  ],
+  "streams": [
+    "FRESH",
+    "FCOMP",
+    "RCTOP",
+    "RECYCLE",
+    "MIXED",
+    "HEATED",
+    "RXOUT",
+    "COOLED",
+    "CMP2OUT",
+    "D1FEED",
+    "VCMPROD"
+  ],
+  "block_connections": {
+    "C1": {
+      "FRESH": "F(IN)",
+      "FCOMP": "P(OUT)"
+    },
+    "M1": {
+      "FCOMP": "F(IN)",
+      "RECYCLE": "F(IN)",
+      "MIXED": "P(OUT)"
+    },
+    "D1": {
+      "RCTOP": "D(OUT)",
+      "D1FEED": "F(IN)",
+      "VCMPROD": "B(OUT)"
+    },
+    "RV1": {
+      "RCTOP": "F(IN)",
+      "RECYCLE": "P(OUT)"
+    },
+    "H1": {
+      "MIXED": "F(IN)",
+      "HEATED": "P(OUT)"
+    },
+    "R1": {
+      "HEATED": "F(IN)",
+      "RXOUT": "P(OUT)"
+    },
+    "H2": {
+      "RXOUT": "F(IN)",
+      "COOLED": "P(OUT)"
+    },
+    "C2": {
+      "COOLED": "F(IN)",
+      "CMP2OUT": "P(OUT)"
+    },
+    "HS1": {
+      "CMP2OUT": "F(IN)",
+      "D1FEED": "P(OUT)"
+    }
+  },
+  "stream_data": {
+    "FRESH": {
+      "MIXED_SPEC": "TP",
+      "temperature": {
+        "TEMP_VALUE": 30.0,
+        "TEMP_UNITS": "C"
+      },
+      "pressure": {
+        "PRES_VALUE": 0.101325,
+        "PRES_UNITS": "MPa"
+      },
+      "flow": {
+        "FLOWBASE": "MOLE",
+        "BASIS": "MOLE-FLOW",
+        "TOTFLOW_VALUE": 3014.8102004849206,
+        "TOTFLOW_UNITS": "mol/sec",
+        "C2H2": {
+          "FLOW_VALUE": 1506.610067152542,
+          "FLOW_UNITS": "mol/sec",
+          "FLOW_BASIS": "MOLE-FLOW"
+        },
+        "HCL": {
+          "FLOW_VALUE": 1508.2001333323788,
+          "FLOW_UNITS": "mol/sec",
+          "FLOW_BASIS": "MOLE-FLOW"
+        },
+        "C2H3CL": {
+          "FLOW_VALUE": 0.0,
+          "FLOW_UNITS": "mol/sec",
+          "FLOW_BASIS": "MOLE-FLOW"
+        }
+      }
+    }
+  },
+  "convergence": {
+    "conv_options": {
+      "tol": 0.0001,
+      "tear_method": "WEGSTEIN",
+      "weg_maxit": 200,
+      "weg_wait": 10,
+      "weg_qmin": -1.0,
+      "weg_qmax": 0.0
+    },
+    "tear_data": []
+  },
+  "blocks_Compr_data": {
+    "C1": {
+      "SPEC_DATA": {
+        "MODEL_TYPE": "COMPRESSOR",
+        "TYPE": "ISENTROPIC",
+        "OPT_SPEC": "PRES",
+        "PRES_VALUE": 0.15,
+        "PRES_UNITS": "MPa"
+      }
+    },
+    "C2": {
+      "SPEC_DATA": {
+        "MODEL_TYPE": "COMPRESSOR",
+        "TYPE": "ISENTROPIC",
+        "OPT_SPEC": "PRES",
+        "PRES_VALUE": 4.24,
+        "PRES_UNITS": "MPa"
+      }
+    }
+  },
+  "blocks_Valve_data": {
+    "RV1": {
+      "JOB_DATA": {
+        "MODE": "ADIAB-FLASH",
+        "P_OUT_VALUE": 0.15,
+        "P_OUT_UNITS": "MPa",
+        "FLASH_MAXIT": 100,
+        "FLASH_TOL": 0.0001
+      }
+    }
+  },
+  "blocks_Mixer_data": {
+    "M1": {
+      "SPEC_DATA": {
+        "PRES_VALUE": 0.15,
+        "PRES_UNITS": "MPa",
+        "MAXIT_VALUE": 200,
+        "TOL_VALUE": 1e-05
+      }
+    }
+  },
+  "blocks_Heater_data": {
+    "H1": {
+      "SPEC_DATA": {
+        "SPEC_OPT": "TP",
+        "TEMP_VALUE": 130.0,
+        "TEMP_UNITS": "C",
+        "PRES_VALUE": 0.15,
+        "PRES_UNITS": "MPa"
+      }
+    },
+    "H2": {
+      "SPEC_DATA": {
+        "SPEC_OPT": "TP",
+        "TEMP_VALUE": 120.0,
+        "TEMP_UNITS": "C",
+        "PRES_VALUE": 0.15,
+        "PRES_UNITS": "MPa"
+      }
+    },
+    "HS1": {
+      "SPEC_DATA": {
+        "SPEC_OPT": "PV",
+        "PRES_VALUE": 4.24,
+        "PRES_UNITS": "MPa",
+        "VFRAC_VALUE": 0.0
+      }
+    }
+  },
+  "blocks_RStoic_data": {
+    "R1": {
+      "SPEC_DATA": {
+        "SPEC_OPT": "TP",
+        "TEMP_VALUE": 130.0,
+        "TEMP_UNITS": "C",
+        "PRES_VALUE": 0.15,
+        "PRES_UNITS": "MPa"
+      },
+      "REAC_DATA": {
+        "REAC": [
+          {
+            "KEY_SSID": "1",
+            "OPT_EXT_CONV": "CONVERSION",
+            "CONV": 0.9,
+            "KEY_CID": "C2H2",
+            "COEF_DATA": {
+              "C2H2": -1.0,
+              "HCL": -1.0
+            },
+            "COEF1_DATA": {
+              "C2H3CL": 1.0
+            }
+          }
+        ]
+      }
+    }
+  },
+  "blocks_DSTWU_data": {
+    "D1": {
+      "SPEC_DATA": {
+        "OPT_NTRR": "RR",
+        "OPT_RDV": "LIQUID",
+        "LIGHTKEY": "HCL",
+        "RECOVL": 0.9507992000057268,
+        "HEAVYKEY": "C2H3CL",
+        "RECOVH": 0.0006221517535894989,
+        "RR": 4.2,
+        "PTOP": 4.221,
+        "PTOP_UNITS": "MPa",
+        "PBOT": 4.237,
+        "PBOT_UNITS": "MPa"
+      }
+    }
+  }
+}

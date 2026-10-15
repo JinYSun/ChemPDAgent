@@ -1,0 +1,331 @@
+{
+  "ir_version": "1.1",
+  "description": "Problem 2 beta loop T=130.0C",
+  "components": [
+    {
+      "id": "acetylene",
+      "cid": "C2H2",
+      "name": "C2H2",
+      "cas_number": "74-86-2",
+      "database_name": "ACETYLENE",
+      "resolution_source": "user"
+    },
+    {
+      "id": "hcl",
+      "cid": "HCL",
+      "name": "HCL",
+      "cas_number": "7647-01-0",
+      "database_name": "HYDROGEN-CHLORIDE",
+      "resolution_source": "user"
+    },
+    {
+      "id": "vcm",
+      "cid": "C2H3CL",
+      "name": "C2H3CL",
+      "cas_number": "75-01-4",
+      "database_name": "VINYL-CHLORIDE",
+      "resolution_source": "user"
+    }
+  ],
+  "property_method": {
+    "name": "PENG-ROB"
+  },
+  "operations": [
+    {
+      "id": "C1",
+      "type": "compr",
+      "spec": {
+        "model": "compressor",
+        "calculation": "isentropic",
+        "specification": "outlet_pressure",
+        "outlet_pressure": {
+          "value": 0.15,
+          "unit": "MPa"
+        }
+      }
+    },
+    {
+      "id": "RV1",
+      "type": "valve",
+      "spec": {
+        "mode": "adiabatic_flash",
+        "outlet_pressure": {
+          "value": 0.15,
+          "unit": "MPa"
+        }
+      }
+    },
+    {
+      "id": "M1",
+      "type": "mixer",
+      "spec": {
+        "pressure_spec": {
+          "kind": "outlet_pressure",
+          "value": {
+            "value": 0.15,
+            "unit": "MPa"
+          }
+        },
+        "max_iterations": 200,
+        "tolerance": 1e-05
+      }
+    },
+    {
+      "id": "H1",
+      "type": "heater",
+      "spec": {
+        "mode": "TP",
+        "temperature": {
+          "value": 130.0,
+          "unit": "C"
+        },
+        "pressure_spec": {
+          "kind": "outlet_pressure",
+          "value": {
+            "value": 0.15,
+            "unit": "MPa"
+          }
+        }
+      }
+    },
+    {
+      "id": "R1",
+      "type": "rstoic",
+      "spec": {
+        "mode": "TP",
+        "temperature": {
+          "value": 130.0,
+          "unit": "C"
+        },
+        "pressure_spec": {
+          "kind": "outlet_pressure",
+          "value": {
+            "value": 0.15,
+            "unit": "MPa"
+          }
+        },
+        "reactions": [
+          {
+            "id": 1,
+            "basis_component": "acetylene",
+            "conversion": 0.9,
+            "reactants": {
+              "acetylene": -1,
+              "hcl": -1
+            },
+            "products": {
+              "vcm": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "H2",
+      "type": "heater",
+      "spec": {
+        "mode": "TP",
+        "temperature": {
+          "value": 120.0,
+          "unit": "C"
+        },
+        "pressure_spec": {
+          "kind": "outlet_pressure",
+          "value": {
+            "value": 0.15,
+            "unit": "MPa"
+          }
+        }
+      }
+    },
+    {
+      "id": "C2",
+      "type": "compr",
+      "spec": {
+        "model": "compressor",
+        "calculation": "isentropic",
+        "specification": "outlet_pressure",
+        "outlet_pressure": {
+          "value": 4.24,
+          "unit": "MPa"
+        }
+      }
+    },
+    {
+      "id": "HS1",
+      "type": "heater",
+      "spec": {
+        "mode": "PV",
+        "pressure_spec": {
+          "kind": "outlet_pressure",
+          "value": {
+            "value": 4.24,
+            "unit": "MPa"
+          }
+        },
+        "vapor_fraction": 0.0
+      }
+    },
+    {
+      "id": "D1",
+      "type": "dstwu",
+      "spec": {
+        "column_spec": "reflux_ratio",
+        "reflux_ratio": 4.2,
+        "top_pressure": {
+          "value": 4.221,
+          "unit": "MPa"
+        },
+        "bottom_pressure": {
+          "value": 4.237,
+          "unit": "MPa"
+        },
+        "condenser": "liquid",
+        "light_key": "hcl",
+        "heavy_key": "vcm",
+        "separation_spec": "recoveries",
+        "light_key_distillate_recovery": 0.9507992000057268,
+        "heavy_key_distillate_recovery": 0.00030960947745373353
+      }
+    }
+  ],
+  "feeds": [
+    {
+      "id": "FRESH",
+      "target": {
+        "operation": "C1",
+        "port": "feed"
+      },
+      "state": {
+        "temperature": {
+          "value": 30.0,
+          "unit": "C"
+        },
+        "pressure": {
+          "value": 0.101325,
+          "unit": "MPa"
+        }
+      },
+      "flow": {
+        "total": {
+          "value": 3014.8102004849206,
+          "unit": "mol/sec"
+        },
+        "basis": "mole_flow",
+        "composition": {
+          "acetylene": 1506.610067152542,
+          "hcl": 1508.2001333323788,
+          "vcm": 0.0
+        }
+      }
+    }
+  ],
+  "streams": [
+    {
+      "id": "FCOMP",
+      "source": {
+        "operation": "C1",
+        "port": "product"
+      },
+      "target": {
+        "operation": "M1",
+        "port": "feed"
+      }
+    },
+    {
+      "id": "RCTOP",
+      "source": {
+        "operation": "D1",
+        "port": "distillate"
+      },
+      "target": {
+        "operation": "RV1",
+        "port": "feed"
+      }
+    },
+    {
+      "id": "RECYCLE",
+      "source": {
+        "operation": "RV1",
+        "port": "product"
+      },
+      "target": {
+        "operation": "M1",
+        "port": "feed"
+      }
+    },
+    {
+      "id": "MIXED",
+      "source": {
+        "operation": "M1",
+        "port": "product"
+      },
+      "target": {
+        "operation": "H1",
+        "port": "feed"
+      }
+    },
+    {
+      "id": "HEATED",
+      "source": {
+        "operation": "H1",
+        "port": "product"
+      },
+      "target": {
+        "operation": "R1",
+        "port": "feed"
+      }
+    },
+    {
+      "id": "RXOUT",
+      "source": {
+        "operation": "R1",
+        "port": "product"
+      },
+      "target": {
+        "operation": "H2",
+        "port": "feed"
+      }
+    },
+    {
+      "id": "COOLED",
+      "source": {
+        "operation": "H2",
+        "port": "product"
+      },
+      "target": {
+        "operation": "C2",
+        "port": "feed"
+      }
+    },
+    {
+      "id": "CMP2OUT",
+      "source": {
+        "operation": "C2",
+        "port": "product"
+      },
+      "target": {
+        "operation": "HS1",
+        "port": "feed"
+      }
+    },
+    {
+      "id": "D1FEED",
+      "source": {
+        "operation": "HS1",
+        "port": "product"
+      },
+      "target": {
+        "operation": "D1",
+        "port": "feed"
+      }
+    },
+    {
+      "id": "VCMPROD",
+      "source": {
+        "operation": "D1",
+        "port": "bottoms"
+      }
+    }
+  ]
+}

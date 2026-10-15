@@ -1,0 +1,1308 @@
+
+ + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+ + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+ + +                                                                         + +
+ + +                      ASPEN PLUS CALCULATION HISTORY                     + +
+ + +                                                                         + +
+ + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+ + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+
+ ASPEN PLUS IS A TRADEMARK OF           HOTLINE:
+ ASPEN TECHNOLOGY, INC.                 U.S.A. 888/996-7100
+ 781/221-6400                           EUROPE (44) 1189-226555
+
+ PLATFORM: WIN-X64                                       OCTOBER 15, 2026    
+ VERSION: 40.0   Build 359                               THURSDAY    
+ INSTALLATION:                                           10:39:52 A.M.       
+
+ THIS COPY OF ASPEN PLUS LICENSED TO                                 
+
+
+      ASPEN PLUS (R) IS A PROPRIETARY PRODUCT OF ASPEN TECHNOLOGY, INC.
+      (ASPENTECH), AND MAY BE USED ONLY UNDER AGREEMENT WITH ASPENTECH.
+      RESTRICTED RIGHTS LEGEND:  USE, REPRODUCTION, OR DISCLOSURE BY THE
+      U.S. GOVERNMENT IS SUBJECT TO RESTRICTIONS SET FORTH IN 
+      (i) FAR 52.227-14, Alt. III, (ii) FAR 52.227-19, (iii) DFARS 
+      252.227-7013(c)(1)(ii), or (iv) THE ACCOMPANYING LICENSE AGREEMENT,
+      AS APPLICABLE. FOR PURPOSES OF THE FAR, THIS SOFTWARE SHALL BE DEEMED
+      TO BE "UNPUBLISHED" AND LICENSED WITH DISCLOSURE PROHIBITIONS.
+      CONTRACTOR/SUBCONTRACTOR: ASPEN TECHNOLOGY, INC. 20 CROSBY DRIVE,
+      BEDFORD, MA 01730.
+ *** INPUT SUMMARY ***
+
+ >>CURRENT RUN
+
+   ORIGINAL RUN                           OCTOBER 15, 2026    
+   10:39:52 A.M.                          THURSDAY    
+   INPUT FILE: _3942pjf.inm
+   RUN ID : _3942pjf
+          1    ;
+          2    ;输入文件创建由Aspen Plus Rel. 40.0 at 10:39:51 Thu Oct 15, 2026
+          3    ;Directory C:\Users\liwang66\Documents\AspenTech\Aspen Plus V14.0  Runid _UNNAMED
+          4    ;
+          5
+          6
+          7    DYNAMICS
+          8        DYNAMICS RESULTS=ON
+          9
+         10    IN-UNITS ENG SHORT-LENGTH=in
+         11
+         12    DEF-STREAMS CONVEN ALL
+         13
+         14    MODEL-OPTION
+         15
+         16    DATABANKS 'APV140 PURE40' / 'APV140 AQUEOUS' / 'APV140 SOLIDS' &
+         17             / 'APV140 INORGANIC' / 'APESV140 AP-EOS' /  &
+         18            'NISTV140 NIST-TRC' / NOASPENPCD
+         19
+         20    PROP-SOURCES 'APV140 PURE40' / 'APV140 AQUEOUS' /  &
+         21            'APV140 SOLIDS' / 'APV140 INORGANIC' / 'APESV140 AP-EOS' &
+         22             / 'NISTV140 NIST-TRC'
+         23
+         24    COMPONENTS
+         25        C2H3CL C2H3CL /
+         26        HCL HCL /
+         27        C2H2 C2H2
+         28
+         29    SOLVE
+         30        RUN-MODE MODE=SIM
+         31
+         32    FLOWSHEET
+         33        BLOCK C1 IN=FRESH OUT=FCOMP
+         34        BLOCK RV1 IN=RCTOP OUT=RECYCLE
+         35        BLOCK M1 IN=FCOMP RECYCLE OUT=MIXED
+         36        BLOCK H1 IN=MIXED OUT=HEATED
+         37        BLOCK R1 IN=HEATED OUT=RXOUT
+         38        BLOCK H2 IN=RXOUT OUT=COOLED
+         39        BLOCK C2 IN=COOLED OUT=CMP2OUT
+         40        BLOCK HS1 IN=CMP2OUT OUT=D1FEED
+         41        BLOCK D1 IN=D1FEED OUT=RCTOP VCMPROD
+         42
+         43    PROPERTIES PENG-ROB
+         44
+         45    STREAM FRESH
+         46        SUBSTREAM MIXED TEMP=30. <C> PRES=0.101325 <MPa>  &
+         47            MOLE-FLOW=3014.8102005 <mol/sec>
+         48        MOLE-FLOW C2H3CL 0. <mol/sec> / HCL 1508.2001333 <mol/sec> /  &
+         49            C2H2 1506.6100672 <mol/sec>
+         50
+         51    BLOCK M1 MIXER
+         52        PARAM PRES=0.15 <MPa> MAXIT=200 TOL=1E-05
+         53
+         54    BLOCK H1 HEATER
+         55        PARAM TEMP=130. <C> PRES=0.15 <MPa> DPPARMOPT=NO
+         56
+         57    BLOCK H2 HEATER
+         58        PARAM TEMP=120. <C> PRES=0.15 <MPa> DPPARMOPT=NO
+         59
+         60    BLOCK HS1 HEATER
+         61        PARAM PRES=4.24 <MPa> VFRAC=0. DPPARMOPT=NO
+         62
+         63    BLOCK D1 DSTWU
+         64        PARAM LIGHTKEY=HCL RECOVL=0.95079920001 HEAVYKEY=C2H3CL  &
+         65            RECOVH=0.00030960947 PTOP=4.221 <MPa> PBOT=4.237 <MPa>  &
+         66            RDV=0.0 RR=4.2
+         67
+         68    BLOCK R1 RSTOIC
+         69        PARAM TEMP=130. <C> PRES=0.15 <MPa>
+         70        STOIC 1 MIXED HCL -1. / C2H2 -1. / C2H3CL 1.
+         71        CONV 1 MIXED C2H2 0.9
+         72
+         73    BLOCK C1 COMPR
+         74        PARAM TYPE=ISENTROPIC PRES=0.15 <MPa> SB-MAXIT=30  &
+         75            SB-TOL=0.0001 MODEL-TYPE=COMPRESSOR
+         76
+         77    BLOCK C2 COMPR
+         78        PARAM TYPE=ISENTROPIC PRES=4.24 <MPa> SB-MAXIT=30  &
+         79            SB-TOL=0.0001 MODEL-TYPE=COMPRESSOR
+         80
+         81    BLOCK RV1 VALVE
+         82        PARAM P-OUT=0.15 <MPa> FLASH-MAXIT=100 FLASH-TOL=0.0001
+         83
+         84    EO-CONV-OPTI
+         85
+         86    CONV-OPTIONS
+         87        PARAM TEAR-METHOD=WEGSTEIN TOL=0.0001
+         88        WEGSTEIN MAXIT=200 WAIT=10 QMIN=-1. QMAX=0.
+         89
+         90    STREAM-REPOR MOLEFLOW
+         91    ;
+         92    ;
+         93    ;
+         94    ;
+         95    ;
+ *** INPUT TRANSLATOR MESSAGES ***
+
+  *** THIS RUN USES THE PROPERTIES ENTERPRISE DATABASE ***
+      SQLLOCALDB.APESV140 : (DATAVERSION - 40.0.0.13)                         
+      SQLLOCALDB.APV140 : (DATAVERSION - 40.0.0.13)                           
+      SQLLOCALDB.FACTV140 : (DATAVERSION - 40.0.0.12)                         
+      SQLLOCALDB.NISTV140 : (DATAVERSION - 40.0.0.12)                         
+ 
+ 
+
+ PDF updated                                                                      TIME =      3.50
+
+ *** CALCULATION TRACE ***
+
+
+ *** FLOWSHEET ANALYSIS MESSAGES ***
+
+ FLOWSHEET CONNECTIVITY BY STREAMS       
+
+   STREAM     SOURCE     DEST           STREAM     SOURCE     DEST
+   FRESH      ----       C1             FCOMP      C1         M1      
+   RECYCLE    RV1        M1             MIXED      M1         H1      
+   HEATED     H1         R1             RXOUT      R1         H2      
+   COOLED     H2         C2             CMP2OUT    C2         HS1     
+   D1FEED     HS1        D1             RCTOP      D1         RV1     
+   VCMPROD    D1         ----                                         
+
+ FLOWSHEET CONNECTIVITY BY BLOCKS        
+
+   BLOCK        INLETS                         OUTLETS
+   C1           FRESH                          FCOMP                       
+   RV1          RCTOP                          RECYCLE                     
+   M1           FCOMP RECYCLE                  MIXED                       
+   H1           MIXED                          HEATED                      
+   R1           HEATED                         RXOUT                       
+   H2           RXOUT                          COOLED                      
+   C2           COOLED                         CMP2OUT                     
+   HS1          CMP2OUT                        D1FEED                      
+   D1           D1FEED                         RCTOP VCMPROD               
+
+      BLOCK $OLVER01 (METHOD: WEGSTEIN) HAS BEEN DEFINED TO CONVERGE
+               STREAMS: RECYCLE
+
+      COMPUTATION ORDER FOR THE FLOWSHEET IS:
+      C1 
+      $OLVER01 M1 H1 R1 H2 C2 HS1 D1 RV1 
+      (RETURN $OLVER01) 
+
+Calculations begin                                                              time      0.27
+
+
+ SIMULATION CALCULATIONS BEGIN                                                    TIME =      0.27
+
+      ENTHALPY CALCULATION FOR INLET STREAM FRESH OF BLOCK C1                     TIME =      0.27
+      KODE = 2  NTRIAL =   2  T = 303.1500  P =  101325.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK C1       MODEL: COMPR                                             TIME =      0.28
+      OUTLET TEMP =   341.6       OUTLET PRES =  0.1500E+06   INDICATED HP =  0.4301E+07   BRAKE HP =  0.4301E+07
+      ISENTR TEMP =   331.1      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.3097E+07  HP =  0.1297E+08
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.28
+      ITER   0 For Tear Streams: RECYCLE
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.28
+      NO. TEMP ITER =    5     TEMP =  341.626    
+      KODE = 1  NTRIAL =   3  T = 341.6263  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.28
+      KODE = 2  NTRIAL =   0  T = 403.1500  P =  150000.      V =  1.00000      Q = 7.245656E+06
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.28
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.481046E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.28
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.005986E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.28
+      OUTLET TEMP =   670.1       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3046E+08   BRAKE HP =  0.3046E+08
+      ISENTR TEMP =   606.9      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2193E+08  HP =  0.5053E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.28
+      KODE = 3  NTRIAL =  10  T = 378.8904  P = 4.240000E+06  V =  0.00000      Q =-5.555794E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.28
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.717    ,  RACT =   4.200    
+       MIN STAGES =   10.69    , ACT STAGES =   17.36    
+       ACT. # OF RECT. STAGES =   10.87    
+       REBOILER DUTY =  0.1748E+08
+       FEED QUALITY =   0.1856E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.28
+      KODE = 1  NTRIAL =   3  T = 195.0832  P =  150000.      V = 0.508120      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.28
+      ITER   1 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   3  T = 195.0832  P =  150000.      V = 0.508120      Q =  0.00000    
+
+  LOOP $OLVER01 ITER    1:   4 VARS NOT CONVERGED, MAX ERR/TOL     0.10000E+07    TIME =      0.30
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.34
+      NO. TEMP ITER =    5     TEMP =  310.840    
+      KODE = 1  NTRIAL =   3  T = 310.8398  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.34
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.178394E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.34
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.623298E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.34
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.102854E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.34
+      OUTLET TEMP =   670.1       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3339E+08   BRAKE HP =  0.3339E+08
+      ISENTR TEMP =   606.9      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2404E+08  HP =  0.6072E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.34
+      KODE = 3  NTRIAL =   1  T = 378.9053  P = 4.240000E+06  V =  0.00000      Q =-6.090256E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.34
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.718    ,  RACT =   4.200    
+       MIN STAGES =   10.69    , ACT STAGES =   17.37    
+       ACT. # OF RECT. STAGES =   10.87    
+       REBOILER DUTY =  0.1916E+08
+       FEED QUALITY =   0.1852E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.34
+      KODE = 1  NTRIAL =   3  T = 195.0831  P =  150000.      V = 0.508140      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.34
+      ITER   2 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0831  P =  150000.      V = 0.508141      Q =  0.00000    
+
+  LOOP $OLVER01 ITER    2:   5 VARS NOT CONVERGED, MAX ERR/TOL      963.58        TIME =      0.34
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.37
+      NO. TEMP ITER =    5     TEMP =  308.139    
+      KODE = 1  NTRIAL =   3  T = 308.1392  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.38
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.221839E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.38
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.636961E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.38
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112130E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.38
+      OUTLET TEMP =   670.1       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3367E+08   BRAKE HP =  0.3367E+08
+      ISENTR TEMP =   606.9      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2424E+08  HP =  0.6174E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.38
+      KODE = 3  NTRIAL =   1  T = 378.9140  P = 4.240000E+06  V =  0.00000      Q =-6.141147E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.38
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.719    ,  RACT =   4.200    
+       MIN STAGES =   10.69    , ACT STAGES =   17.37    
+       ACT. # OF RECT. STAGES =   10.88    
+       REBOILER DUTY =  0.1931E+08
+       FEED QUALITY =   0.1853E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.38
+      KODE = 1  NTRIAL =   3  T = 195.0831  P =  150000.      V = 0.508161      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.38
+      ITER   3 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0831  P =  150000.      V = 0.508161      Q =  0.00000    
+
+  LOOP $OLVER01 ITER    3:   5 VARS NOT CONVERGED, MAX ERR/TOL      84.416        TIME =      0.38
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.38
+      NO. TEMP ITER =    5     TEMP =  307.891    
+      KODE = 1  NTRIAL =   4  T = 307.8909  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.38
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.225875E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.38
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638273E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.38
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112995E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.38
+      OUTLET TEMP =   670.1       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3369E+08   BRAKE HP =  0.3369E+08
+      ISENTR TEMP =   606.9      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2426E+08  HP =  0.6183E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.38
+      KODE = 3  NTRIAL =   1  T = 378.9218  P = 4.240000E+06  V =  0.00000      Q =-6.145616E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.38
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.720    ,  RACT =   4.200    
+       MIN STAGES =   10.69    , ACT STAGES =   17.37    
+       ACT. # OF RECT. STAGES =   10.88    
+       REBOILER DUTY =  0.1932E+08
+       FEED QUALITY =   0.1853E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.38
+      KODE = 1  NTRIAL =   3  T = 195.0830  P =  150000.      V = 0.508182      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.38
+      ITER   4 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0830  P =  150000.      V = 0.508182      Q =  0.00000    
+
+  LOOP $OLVER01 ITER    4:   5 VARS NOT CONVERGED, MAX ERR/TOL      8.9220        TIME =      0.38
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.39
+      NO. TEMP ITER =    5     TEMP =  307.876    
+      KODE = 1  NTRIAL =   4  T = 307.8756  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.39
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.226132E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.39
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638399E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.39
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.113053E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.39
+      OUTLET TEMP =   670.1       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3369E+08   BRAKE HP =  0.3369E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2426E+08  HP =  0.6184E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.39
+      KODE = 3  NTRIAL =   1  T = 378.9291  P = 4.240000E+06  V =  0.00000      Q =-6.145648E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.39
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.720    ,  RACT =   4.200    
+       MIN STAGES =   10.69    , ACT STAGES =   17.38    
+       ACT. # OF RECT. STAGES =   10.88    
+       REBOILER DUTY =  0.1932E+08
+       FEED QUALITY =   0.1854E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.39
+      KODE = 1  NTRIAL =   3  T = 195.0830  P =  150000.      V = 0.508202      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.39
+      ITER   5 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0830  P =  150000.      V = 0.508202      Q =  0.00000    
+
+  LOOP $OLVER01 ITER    5:   3 VARS NOT CONVERGED, MAX ERR/TOL      8.4820        TIME =      0.39
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.39
+      NO. TEMP ITER =    5     TEMP =  307.882    
+      KODE = 1  NTRIAL =   4  T = 307.8823  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.39
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.226033E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.39
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638411E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.39
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.113034E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.39
+      OUTLET TEMP =   670.1       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3369E+08   BRAKE HP =  0.3369E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2426E+08  HP =  0.6183E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.39
+      KODE = 3  NTRIAL =   1  T = 378.9360  P = 4.240000E+06  V =  0.00000      Q =-6.145274E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.39
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.721    ,  RACT =   4.200    
+       MIN STAGES =   10.69    , ACT STAGES =   17.38    
+       ACT. # OF RECT. STAGES =   10.88    
+       REBOILER DUTY =  0.1931E+08
+       FEED QUALITY =   0.1854E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.39
+      KODE = 1  NTRIAL =   3  T = 195.0829  P =  150000.      V = 0.508220      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.39
+      ITER   6 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0829  P =  150000.      V = 0.508220      Q =  0.00000    
+
+  LOOP $OLVER01 ITER    6:   3 VARS NOT CONVERGED, MAX ERR/TOL      8.0490        TIME =      0.39
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.40
+      NO. TEMP ITER =    5     TEMP =  307.891    
+      KODE = 1  NTRIAL =   4  T = 307.8907  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.40
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.225906E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.40
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638412E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.40
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.113010E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.40
+      OUTLET TEMP =   670.1       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3369E+08   BRAKE HP =  0.3369E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2426E+08  HP =  0.6182E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.40
+      KODE = 3  NTRIAL =   1  T = 378.9426  P = 4.240000E+06  V =  0.00000      Q =-6.144881E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.40
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.722    ,  RACT =   4.200    
+       MIN STAGES =   10.69    , ACT STAGES =   17.39    
+       ACT. # OF RECT. STAGES =   10.89    
+       REBOILER DUTY =  0.1931E+08
+       FEED QUALITY =   0.1854E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.40
+      KODE = 1  NTRIAL =   3  T = 195.0829  P =  150000.      V = 0.508238      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.40
+      ITER   7 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0829  P =  150000.      V = 0.508238      Q =  0.00000    
+
+  LOOP $OLVER01 ITER    7:   3 VARS NOT CONVERGED, MAX ERR/TOL      7.6362        TIME =      0.40
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.40
+      NO. TEMP ITER =    5     TEMP =  307.899    
+      KODE = 1  NTRIAL =   4  T = 307.8988  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.40
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.225783E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.40
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638412E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.40
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112986E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.40
+      OUTLET TEMP =   670.0       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3369E+08   BRAKE HP =  0.3369E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2426E+08  HP =  0.6182E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.40
+      KODE = 3  NTRIAL =   1  T = 378.9489  P = 4.240000E+06  V =  0.00000      Q =-6.144504E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.40
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.722    ,  RACT =   4.200    
+       MIN STAGES =   10.69    , ACT STAGES =   17.39    
+       ACT. # OF RECT. STAGES =   10.89    
+       REBOILER DUTY =  0.1930E+08
+       FEED QUALITY =   0.1854E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.40
+      KODE = 1  NTRIAL =   3  T = 195.0829  P =  150000.      V = 0.508254      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.40
+      ITER   8 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0828  P =  150000.      V = 0.508255      Q =  0.00000    
+
+  LOOP $OLVER01 ITER    8:   3 VARS NOT CONVERGED, MAX ERR/TOL      7.2450        TIME =      0.40
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.40
+      NO. TEMP ITER =    5     TEMP =  307.907    
+      KODE = 1  NTRIAL =   4  T = 307.9065  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.40
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.225665E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.40
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638412E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.40
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112964E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.40
+      OUTLET TEMP =   670.0       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3369E+08   BRAKE HP =  0.3369E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2426E+08  HP =  0.6181E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.40
+      KODE = 3  NTRIAL =   1  T = 378.9548  P = 4.240000E+06  V =  0.00000      Q =-6.144146E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.40
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.723    ,  RACT =   4.200    
+       MIN STAGES =   10.69    , ACT STAGES =   17.39    
+       ACT. # OF RECT. STAGES =   10.89    
+       REBOILER DUTY =  0.1930E+08
+       FEED QUALITY =   0.1855E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.40
+      KODE = 1  NTRIAL =   3  T = 195.0828  P =  150000.      V = 0.508270      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.40
+      ITER   9 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0828  P =  150000.      V = 0.508270      Q =  0.00000    
+
+  LOOP $OLVER01 ITER    9:   3 VARS NOT CONVERGED, MAX ERR/TOL      6.8726        TIME =      0.40
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.41
+      NO. TEMP ITER =    5     TEMP =  307.914    
+      KODE = 1  NTRIAL =   4  T = 307.9138  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.42
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.225554E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.42
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638412E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.42
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112942E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.42
+      OUTLET TEMP =   670.0       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3369E+08   BRAKE HP =  0.3369E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2425E+08  HP =  0.6181E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.42
+      KODE = 3  NTRIAL =   1  T = 378.9604  P = 4.240000E+06  V =  0.00000      Q =-6.143806E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.42
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.723    ,  RACT =   4.200    
+       MIN STAGES =   10.69    , ACT STAGES =   17.40    
+       ACT. # OF RECT. STAGES =   10.89    
+       REBOILER DUTY =  0.1929E+08
+       FEED QUALITY =   0.1851E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.43
+      KODE = 1  NTRIAL =   3  T = 195.0828  P =  150000.      V = 0.508285      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.43
+      ITER  10 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0828  P =  150000.      V = 0.508285      Q =  0.00000    
+
+  LOOP $OLVER01 ITER   10:   3 VARS NOT CONVERGED, MAX ERR/TOL      6.5212        TIME =      0.43
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.43
+      NO. TEMP ITER =    5     TEMP =  307.921    
+      KODE = 1  NTRIAL =   4  T = 307.9208  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.43
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.225448E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.43
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638411E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.43
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112922E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.43
+      OUTLET TEMP =   670.0       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3369E+08   BRAKE HP =  0.3369E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2425E+08  HP =  0.6180E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.43
+      KODE = 3  NTRIAL =   1  T = 378.9658  P = 4.240000E+06  V =  0.00000      Q =-6.143484E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.43
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.724    ,  RACT =   4.200    
+       MIN STAGES =   10.69    , ACT STAGES =   17.40    
+       ACT. # OF RECT. STAGES =   10.90    
+       REBOILER DUTY =  0.1929E+08
+       FEED QUALITY =   0.1855E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.43
+      KODE = 1  NTRIAL =   3  T = 195.0827  P =  150000.      V = 0.508299      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.43
+      ITER  11 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0827  P =  150000.      V = 0.508313      Q =  0.00000    
+
+  LOOP $OLVER01 ITER   11:   3 VARS NOT CONVERGED, MAX ERR/TOL      6.1868        TIME =      0.43
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.43
+      NO. TEMP ITER =    5     TEMP =  307.934    
+      KODE = 1  NTRIAL =   4  T = 307.9339  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.43
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.225248E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.43
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638411E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.43
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112883E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.43
+      OUTLET TEMP =   670.0       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3368E+08   BRAKE HP =  0.3368E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2425E+08  HP =  0.6179E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.43
+      KODE = 3  NTRIAL =   1  T = 378.9758  P = 4.240000E+06  V =  0.00000      Q =-6.142875E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.43
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.725    ,  RACT =   4.200    
+       MIN STAGES =   10.69    , ACT STAGES =   17.40    
+       ACT. # OF RECT. STAGES =   10.90    
+       REBOILER DUTY =  0.1928E+08
+       FEED QUALITY =   0.1854E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.43
+      KODE = 1  NTRIAL =   3  T = 195.0827  P =  150000.      V = 0.508327      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.43
+      ITER  12 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0826  P =  150000.      V = 0.508340      Q =  0.00000    
+
+  LOOP $OLVER01 ITER   12:   3 VARS NOT CONVERGED, MAX ERR/TOL      5.5558        TIME =      0.43
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.43
+      NO. TEMP ITER =    5     TEMP =  307.946    
+      KODE = 1  NTRIAL =   4  T = 307.9459  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.43
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.225067E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.45
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638411E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.45
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112849E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.45
+      OUTLET TEMP =   670.0       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3368E+08   BRAKE HP =  0.3368E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2425E+08  HP =  0.6178E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.45
+      KODE = 3  NTRIAL =   1  T = 378.9848  P = 4.240000E+06  V =  0.00000      Q =-6.142326E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.45
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.726    ,  RACT =   4.200    
+       MIN STAGES =   10.69    , ACT STAGES =   17.41    
+       ACT. # OF RECT. STAGES =   10.90    
+       REBOILER DUTY =  0.1927E+08
+       FEED QUALITY =   0.1854E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.45
+      KODE = 1  NTRIAL =   3  T = 195.0826  P =  150000.      V = 0.508351      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.45
+      ITER  13 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0826  P =  150000.      V = 0.508361      Q =  0.00000    
+
+  LOOP $OLVER01 ITER   13:   3 VARS NOT CONVERGED, MAX ERR/TOL      4.9819        TIME =      0.45
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.45
+      NO. TEMP ITER =    5     TEMP =  307.956    
+      KODE = 1  NTRIAL =   4  T = 307.9564  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.45
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.224906E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.45
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638411E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.45
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112817E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.45
+      OUTLET TEMP =   670.0       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3368E+08   BRAKE HP =  0.3368E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2425E+08  HP =  0.6178E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.45
+      KODE = 3  NTRIAL =   1  T = 378.9930  P = 4.240000E+06  V =  0.00000      Q =-6.141833E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.45
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.727    ,  RACT =   4.200    
+       MIN STAGES =   10.69    , ACT STAGES =   17.41    
+       ACT. # OF RECT. STAGES =   10.91    
+       REBOILER DUTY =  0.1927E+08
+       FEED QUALITY =   0.1855E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.45
+      KODE = 1  NTRIAL =   3  T = 195.0825  P =  150000.      V = 0.508373      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.45
+      ITER  14 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0825  P =  150000.      V = 0.508384      Q =  0.00000    
+
+  LOOP $OLVER01 ITER   14:   3 VARS NOT CONVERGED, MAX ERR/TOL      4.4764        TIME =      0.45
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.45
+      NO. TEMP ITER =    5     TEMP =  307.966    
+      KODE = 1  NTRIAL =   4  T = 307.9661  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.45
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.224759E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.45
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638411E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.45
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112789E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.45
+      OUTLET TEMP =   670.0       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3368E+08   BRAKE HP =  0.3368E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2425E+08  HP =  0.6177E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.45
+      KODE = 3  NTRIAL =   1  T = 379.0004  P = 4.240000E+06  V =  0.00000      Q =-6.141389E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.45
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.728    ,  RACT =   4.200    
+       MIN STAGES =   10.69    , ACT STAGES =   17.42    
+       ACT. # OF RECT. STAGES =   10.91    
+       REBOILER DUTY =  0.1926E+08
+       FEED QUALITY =   0.1855E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.45
+      KODE = 1  NTRIAL =   3  T = 195.0825  P =  150000.      V = 0.508392      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.45
+      ITER  15 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0825  P =  150000.      V = 0.508400      Q =  0.00000    
+
+  LOOP $OLVER01 ITER   15:   3 VARS NOT CONVERGED, MAX ERR/TOL      4.0123        TIME =      0.45
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.45
+      NO. TEMP ITER =    5     TEMP =  307.975    
+      KODE = 1  NTRIAL =   4  T = 307.9746  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.45
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.224630E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.47
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638410E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.47
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112764E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.47
+      OUTLET TEMP =   670.0       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3367E+08   BRAKE HP =  0.3367E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2424E+08  HP =  0.6176E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.47
+      KODE = 3  NTRIAL =   1  T = 379.0070  P = 4.240000E+06  V =  0.00000      Q =-6.140991E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.47
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.728    ,  RACT =   4.200    
+       MIN STAGES =   10.69    , ACT STAGES =   17.42    
+       ACT. # OF RECT. STAGES =   10.91    
+       REBOILER DUTY =  0.1926E+08
+       FEED QUALITY =   0.1856E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.47
+      KODE = 1  NTRIAL =   3  T = 195.0824  P =  150000.      V = 0.508410      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.47
+      ITER  16 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0824  P =  150000.      V = 0.508419      Q =  0.00000    
+
+  LOOP $OLVER01 ITER   16:   3 VARS NOT CONVERGED, MAX ERR/TOL      3.6064        TIME =      0.47
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.47
+      NO. TEMP ITER =    5     TEMP =  307.982    
+      KODE = 1  NTRIAL =   4  T = 307.9824  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.47
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.224512E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.47
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638410E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.47
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112742E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.47
+      OUTLET TEMP =   670.0       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3367E+08   BRAKE HP =  0.3367E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2424E+08  HP =  0.6176E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.47
+      KODE = 3  NTRIAL =   1  T = 379.0129  P = 4.240000E+06  V =  0.00000      Q =-6.140634E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.47
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.729    ,  RACT =   4.200    
+       MIN STAGES =   10.69    , ACT STAGES =   17.43    
+       ACT. # OF RECT. STAGES =   10.91    
+       REBOILER DUTY =  0.1925E+08
+       FEED QUALITY =   0.1856E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.47
+      KODE = 1  NTRIAL =   3  T = 195.0824  P =  150000.      V = 0.508426      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.47
+      ITER  17 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0824  P =  150000.      V = 0.508433      Q =  0.00000    
+
+  LOOP $OLVER01 ITER   17:   3 VARS NOT CONVERGED, MAX ERR/TOL      3.2318        TIME =      0.47
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.47
+      NO. TEMP ITER =    5     TEMP =  307.989    
+      KODE = 1  NTRIAL =   4  T = 307.9892  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.47
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.224407E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.47
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638410E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.47
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112722E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.47
+      OUTLET TEMP =   670.0       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3367E+08   BRAKE HP =  0.3367E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2424E+08  HP =  0.6175E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.47
+      KODE = 3  NTRIAL =   1  T = 379.0182  P = 4.240000E+06  V =  0.00000      Q =-6.140313E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.47
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.729    ,  RACT =   4.200    
+       MIN STAGES =   10.70    , ACT STAGES =   17.43    
+       ACT. # OF RECT. STAGES =   10.91    
+       REBOILER DUTY =  0.1925E+08
+       FEED QUALITY =   0.1852E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.47
+      KODE = 1  NTRIAL =   3  T = 195.0824  P =  150000.      V = 0.508440      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.47
+      ITER  18 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0824  P =  150000.      V = 0.508447      Q =  0.00000    
+
+  LOOP $OLVER01 ITER   18:   2 VARS NOT CONVERGED, MAX ERR/TOL      2.9038        TIME =      0.47
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.47
+      NO. TEMP ITER =    5     TEMP =  307.995    
+      KODE = 1  NTRIAL =   4  T = 307.9955  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.47
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.224312E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.47
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638410E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.48
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112703E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.48
+      OUTLET TEMP =   670.0       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3367E+08   BRAKE HP =  0.3367E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2424E+08  HP =  0.6175E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.49
+      KODE = 3  NTRIAL =   1  T = 379.0230  P = 4.240000E+06  V =  0.00000      Q =-6.140026E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.49
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.730    ,  RACT =   4.200    
+       MIN STAGES =   10.70    , ACT STAGES =   17.43    
+       ACT. # OF RECT. STAGES =   10.92    
+       REBOILER DUTY =  0.1924E+08
+       FEED QUALITY =   0.1856E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.49
+      KODE = 1  NTRIAL =   3  T = 195.0823  P =  150000.      V = 0.508453      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.49
+      ITER  19 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0823  P =  150000.      V = 0.508456      Q =  0.00000    
+
+  LOOP $OLVER01 ITER   19:   2 VARS NOT CONVERGED, MAX ERR/TOL      2.6044        TIME =      0.49
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.49
+      NO. TEMP ITER =    5     TEMP =  308.001    
+      KODE = 1  NTRIAL =   4  T = 308.0009  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.49
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.224229E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.49
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638410E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.49
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112687E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.49
+      OUTLET TEMP =   670.0       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3367E+08   BRAKE HP =  0.3367E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2424E+08  HP =  0.6174E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.49
+      KODE = 3  NTRIAL =   1  T = 379.0273  P = 4.240000E+06  V =  0.00000      Q =-6.139767E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.49
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.730    ,  RACT =   4.200    
+       MIN STAGES =   10.70    , ACT STAGES =   17.43    
+       ACT. # OF RECT. STAGES =   10.92    
+       REBOILER DUTY =  0.1924E+08
+       FEED QUALITY =   0.1854E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.49
+      KODE = 1  NTRIAL =   3  T = 195.0823  P =  150000.      V = 0.508464      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.49
+      ITER  20 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0823  P =  150000.      V = 0.508469      Q =  0.00000    
+
+  LOOP $OLVER01 ITER   20:   2 VARS NOT CONVERGED, MAX ERR/TOL      2.3453        TIME =      0.49
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.49
+      NO. TEMP ITER =    5     TEMP =  308.006    
+      KODE = 1  NTRIAL =   4  T = 308.0060  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.49
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.224152E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.49
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638410E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.49
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112672E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.49
+      OUTLET TEMP =   670.0       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3367E+08   BRAKE HP =  0.3367E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2424E+08  HP =  0.6174E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.49
+      KODE = 3  NTRIAL =   1  T = 379.0312  P = 4.240000E+06  V =  0.00000      Q =-6.139534E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.49
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.731    ,  RACT =   4.200    
+       MIN STAGES =   10.70    , ACT STAGES =   17.44    
+       ACT. # OF RECT. STAGES =   10.92    
+       REBOILER DUTY =  0.1924E+08
+       FEED QUALITY =   0.1854E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.49
+      KODE = 1  NTRIAL =   3  T = 195.0823  P =  150000.      V = 0.508475      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.49
+      ITER  21 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0823  P =  150000.      V = 0.508477      Q =  0.00000    
+
+  LOOP $OLVER01 ITER   21:   2 VARS NOT CONVERGED, MAX ERR/TOL      2.1020        TIME =      0.49
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.49
+      NO. TEMP ITER =    5     TEMP =  308.010    
+      KODE = 1  NTRIAL =   4  T = 308.0104  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.49
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.224085E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.49
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638410E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.49
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112659E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.51
+      OUTLET TEMP =   669.9       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3367E+08   BRAKE HP =  0.3367E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2424E+08  HP =  0.6174E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.51
+      KODE = 3  NTRIAL =   1  T = 379.0346  P = 4.240000E+06  V =  0.00000      Q =-6.139326E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.51
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.731    ,  RACT =   4.200    
+       MIN STAGES =   10.70    , ACT STAGES =   17.44    
+       ACT. # OF RECT. STAGES =   10.92    
+       REBOILER DUTY =  0.1923E+08
+       FEED QUALITY =   0.1854E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.51
+      KODE = 1  NTRIAL =   3  T = 195.0823  P =  150000.      V = 0.508484      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.51
+      ITER  22 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0822  P =  150000.      V = 0.508491      Q =  0.00000    
+
+  LOOP $OLVER01 ITER   22:   2 VARS NOT CONVERGED, MAX ERR/TOL      1.8901        TIME =      0.51
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.51
+      NO. TEMP ITER =    5     TEMP =  308.015    
+      KODE = 1  NTRIAL =   4  T = 308.0147  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.51
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.224021E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.51
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638409E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.51
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112647E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.51
+      OUTLET TEMP =   669.9       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3367E+08   BRAKE HP =  0.3367E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2424E+08  HP =  0.6173E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.51
+      KODE = 3  NTRIAL =   1  T = 379.0377  P = 4.240000E+06  V =  0.00000      Q =-6.139138E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.51
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.731    ,  RACT =   4.200    
+       MIN STAGES =   10.70    , ACT STAGES =   17.44    
+       ACT. # OF RECT. STAGES =   10.92    
+       REBOILER DUTY =  0.1923E+08
+       FEED QUALITY =   0.1855E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.52
+      KODE = 1  NTRIAL =   3  T = 195.0822  P =  150000.      V = 0.508493      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.52
+      ITER  23 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0822  P =  150000.      V = 0.508495      Q =  0.00000    
+
+  LOOP $OLVER01 ITER   23:   2 VARS NOT CONVERGED, MAX ERR/TOL      1.6839        TIME =      0.52
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.52
+      NO. TEMP ITER =    5     TEMP =  308.018    
+      KODE = 1  NTRIAL =   4  T = 308.0181  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.52
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.223968E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.52
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638409E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.52
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112637E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.52
+      OUTLET TEMP =   669.9       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3366E+08   BRAKE HP =  0.3366E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2424E+08  HP =  0.6173E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.52
+      KODE = 3  NTRIAL =   1  T = 379.0405  P = 4.240000E+06  V =  0.00000      Q =-6.138971E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.52
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.732    ,  RACT =   4.200    
+       MIN STAGES =   10.70    , ACT STAGES =   17.44    
+       ACT. # OF RECT. STAGES =   10.92    
+       REBOILER DUTY =  0.1923E+08
+       FEED QUALITY =   0.1855E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.52
+      KODE = 1  NTRIAL =   3  T = 195.0822  P =  150000.      V = 0.508500      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.52
+      ITER  24 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0822  P =  150000.      V = 0.508503      Q =  0.00000    
+
+  LOOP $OLVER01 ITER   24:   2 VARS NOT CONVERGED, MAX ERR/TOL      1.5221        TIME =      0.52
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.52
+      NO. TEMP ITER =    5     TEMP =  308.021    
+      KODE = 1  NTRIAL =   4  T = 308.0214  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.52
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.223918E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.52
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638409E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.52
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112627E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.52
+      OUTLET TEMP =   669.9       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3366E+08   BRAKE HP =  0.3366E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2424E+08  HP =  0.6173E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.53
+      KODE = 3  NTRIAL =   1  T = 379.0430  P = 4.240000E+06  V =  0.00000      Q =-6.138820E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.53
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.732    ,  RACT =   4.200    
+       MIN STAGES =   10.70    , ACT STAGES =   17.44    
+       ACT. # OF RECT. STAGES =   10.92    
+       REBOILER DUTY =  0.1923E+08
+       FEED QUALITY =   0.1855E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.53
+      KODE = 1  NTRIAL =   3  T = 195.0822  P =  150000.      V = 0.508507      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.53
+      ITER  25 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0822  P =  150000.      V = 0.508508      Q =  0.00000    
+
+  LOOP $OLVER01 ITER   25:   1 VARS NOT CONVERGED, MAX ERR/TOL      1.3625        TIME =      0.53
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.53
+      NO. TEMP ITER =    5     TEMP =  308.024    
+      KODE = 1  NTRIAL =   4  T = 308.0243  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.53
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.223874E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.53
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638409E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.53
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112619E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.53
+      OUTLET TEMP =   669.9       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3366E+08   BRAKE HP =  0.3366E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2424E+08  HP =  0.6173E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.53
+      KODE = 3  NTRIAL =   1  T = 379.0453  P = 4.240000E+06  V =  0.00000      Q =-6.138685E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.53
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.732    ,  RACT =   4.200    
+       MIN STAGES =   10.70    , ACT STAGES =   17.44    
+       ACT. # OF RECT. STAGES =   10.92    
+       REBOILER DUTY =  0.1922E+08
+       FEED QUALITY =   0.1856E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.53
+      KODE = 1  NTRIAL =   3  T = 195.0822  P =  150000.      V = 0.508513      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.53
+      ITER  26 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0822  P =  150000.      V = 0.508518      Q =  0.00000    
+
+  LOOP $OLVER01 ITER   26:   1 VARS NOT CONVERGED, MAX ERR/TOL      1.2271        TIME =      0.53
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.54
+      NO. TEMP ITER =    5     TEMP =  308.027    
+      KODE = 1  NTRIAL =   4  T = 308.0271  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.54
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.223832E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.54
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638409E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.54
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112611E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.54
+      OUTLET TEMP =   669.9       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3366E+08   BRAKE HP =  0.3366E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2424E+08  HP =  0.6173E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.54
+      KODE = 3  NTRIAL =   1  T = 379.0473  P = 4.240000E+06  V =  0.00000      Q =-6.138563E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.54
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.732    ,  RACT =   4.200    
+       MIN STAGES =   10.70    , ACT STAGES =   17.44    
+       ACT. # OF RECT. STAGES =   10.93    
+       REBOILER DUTY =  0.1922E+08
+       FEED QUALITY =   0.1856E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.54
+      KODE = 1  NTRIAL =   3  T = 195.0822  P =  150000.      V = 0.508518      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.54
+      ITER  27 For Tear Streams: RECYCLE
+
+      --FLASH TEAR STREAM RECYCLE 
+      KODE = 1  NTRIAL =   1  T = 195.0822  P =  150000.      V = 0.508519      Q =  0.00000    
+
+  LOOP $OLVER01 ITER   27:   1 VARS NOT CONVERGED, MAX ERR/TOL      1.0905        TIME =      0.54
+
+      UOS BLOCK M1       MODEL: MIXER                                             TIME =      0.54
+      NO. TEMP ITER =    5     TEMP =  308.029    
+      KODE = 1  NTRIAL =   4  T = 308.0293  P =  150000.      V =  1.00000      Q =  0.00000    
+
+      UOS BLOCK H1       MODEL: HEATER                                            TIME =      0.54
+      KODE = 2  NTRIAL =   2  T = 403.1500  P =  150000.      V =  1.00000      Q = 1.223799E+07
+
+      UOS BLOCK R1       MODEL: RSTOIC                                            TIME =      0.54
+      KODE = 2  NTRIAL =   3  T = 403.1500  P =  150000.      V =  1.00000      Q =-1.638409E+08
+
+      UOS BLOCK H2       MODEL: HEATER                                            TIME =      0.54
+      KODE = 2  NTRIAL =   4  T = 393.1500  P =  150000.      V =  1.00000      Q =-1.112604E+06
+
+      UOS BLOCK C2       MODEL: COMPR                                             TIME =      0.54
+      OUTLET TEMP =   669.9       OUTLET PRES =  0.4240E+07   INDICATED HP =  0.3366E+08   BRAKE HP =  0.3366E+08
+      ISENTR TEMP =   606.8      CALC ISENTR EFF =  0.7200      ISENTR HP =  0.2424E+08  HP =  0.6172E+08
+
+      UOS BLOCK HS1      MODEL: HEATER                                            TIME =      0.54
+      KODE = 3  NTRIAL =   1  T = 379.0491  P = 4.240000E+06  V =  0.00000      Q =-6.138455E+07
+
+      UOS BLOCK D1       MODEL: DSTWU                                             TIME =      0.54
+       TD =   291.6    ,  TB =   410.5    ,  RMIN =   2.732    ,  RACT =   4.200    
+       MIN STAGES =   10.70    , ACT STAGES =   17.45    
+       ACT. # OF RECT. STAGES =   10.93    
+       REBOILER DUTY =  0.1922E+08
+       FEED QUALITY =   0.1856E-02
+
+      UOS BLOCK RV1      MODEL: VALVE                                             TIME =      0.55
+      KODE = 1  NTRIAL =   3  T = 195.0822  P =  150000.      V = 0.508523      Q =  0.00000    
+      OUTLET PRES =   0.1500E+06 PRES DROP =   0.4071E+07
+
+      CONVERGENCE BLOCK $OLVER01  METHOD: WEGSTEIN                                TIME =      0.55
+      ITER  28 For Tear Streams: RECYCLE
+
+  LOOP $OLVER01 ITER   28:     *** CONVERGED *** , MAX ERR/TOL     0.98991        TIME =      0.55
+
+      GENERATING RESULTS FOR UOS BLOCK H1       MODEL: HEATER                     TIME =      0.55
+
+      GENERATING RESULTS FOR UOS BLOCK H2       MODEL: HEATER                     TIME =      0.55
+
+      GENERATING RESULTS FOR UOS BLOCK HS1      MODEL: HEATER                     TIME =      0.55
+      STREAM RCTOP WILL BE FLASHED FOR PROPERTY CALCULATIONS.
+      KODE = 3  NTRIAL =   7  T = 291.6479  P = 4.221000E+06  V =  0.00000      Q =-0.957190    
+      STREAM VCMPROD WILL BE FLASHED FOR PROPERTY CALCULATIONS.
+      KODE = 3  NTRIAL =   9  T = 410.4687  P = 4.237000E+06  V =  0.00000      Q =  1.09099    
+
+ Report Writer entered                                                            Time =      2.41
+      STREAM RCTOP WILL BE FLASHED FOR PROPERTY CALCULATIONS.
+      KODE = 3  NTRIAL =   7  T = 291.6479  P = 4.221000E+06  V =  0.00000      Q =-0.957190    
+      STREAM VCMPROD WILL BE FLASHED FOR PROPERTY CALCULATIONS.
+      KODE = 3  NTRIAL =   9  T = 410.4687  P = 4.237000E+06  V =  0.00000      Q =  1.09099    
+
+ Results generated                                                                Time =      2.44
+
+RUN SAVED
+
+
+
+ NO ERRORS OR WARNINGS GENERATED
