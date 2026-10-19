@@ -31,6 +31,10 @@ thermo_helper.py — 统一物性计算引擎 (thermo + CoolProp 双引擎版)
 ■ CoolProp 覆盖流体：~124 种纯流体 (NIST REFPROP 级别精度)
   不在 CoolProp 中的物质自动回退到 thermo
 
+■ Henry 常数:
+  水溶液 Henry 常数优先使用专用文献关联式/ Sander v5 数据，
+  不用通用 cubic EOS 代替无限稀释强非对称体系。
+
 ■ 扩散系数补充 (CoolProp 不提供):
   气相: Chapman-Enskog 理论 (精度约±5%)
   液相: Wilke-Chang 方程 (精度约±10%)  /  Hayduk-Minhas 方程
@@ -1090,7 +1094,7 @@ def calc_viscosity_gas(name: str, T: float, P: float = 101325.0) -> Optional[flo
         val = _safe_float(getattr(chem, 'mug', None))
         if val and val > 0:
             return val
-    # thermo 也失效, 取该温度饱和气相粘度 (气相物性在该温度仍有良定义)
+    # thermo 也失效: 取该温度饱和气相粘度 (气相物性在该温度仍有良定义)
     if cp_name:
         val = _cp_sat_gas_prop('viscosity', T, cp_name)
         if val:
@@ -1172,7 +1176,7 @@ def calc_thermal_conductivity_gas(name: str, T: float,
         val = _safe_float(getattr(chem, 'kg', None))
         if val and val > 0:
             return val
-    # thermo 也失效, 取该温度饱和气相导热 (气相物性在该温度仍有良定义)
+    # thermo 也失效: 取该温度饱和气相导热 (气相物性在该温度仍有良定义)
     if cp_name:
         val = _cp_sat_gas_prop('conductivity', T, cp_name)
         if val:
@@ -1701,97 +1705,8 @@ def get_molecular_descriptors(name: str) -> Dict:
 
 
 # ============================================================
-# K 值 & 相平衡
+# K 值 & 相平衡 (核心修复)
 # ============================================================
-# ============================================================
-# Wilson / NRTL 二元交互参数数据库
-# ============================================================
-_WILSON_NRTL_DB: Dict[Tuple[str, str], Dict] = {
-    ("ethanol", "water"): {
-        "wilson": {"Lambda_12": 526.06, "Lambda_21": 1447.86},
-        "nrtl":   {"tau_12": 631.05, "tau_21": 1197.41, "alpha": 0.3},
-    },
-    ("methanol", "water"): {
-        "wilson": {"Lambda_12": 1197.41, "Lambda_21": 415.27},
-        "nrtl":   {"tau_12": 351.26, "tau_21": 1367.17, "alpha": 0.3},
-    },
-    ("acetone", "water"): {
-        "wilson": {"Lambda_12": 2627.73, "Lambda_21": -225.17},
-        "nrtl":   {"tau_12": 2167.35, "tau_21": 273.14, "alpha": 0.3},
-    },
-    ("benzene", "toluene"): {
-        "wilson": {"Lambda_12": 0.0, "Lambda_21": 0.0},
-        "nrtl":   {"tau_12": 0.0, "tau_21": 0.0, "alpha": 0.3},
-    },
-}
-
-
-def _resolve_wilson_nrtl_key(components: List[str]) -> Optional[Tuple[str, str]]:
-    """在数据库中查找组分对（忽略顺序）"""
-    if len(components) != 2:
-        return None
-    c1, c2 = components[0].lower().strip(), components[1].lower().strip()
-    for (a, b) in _WILSON_NRTL_DB:
-        if (c1 == a and c2 == b) or (c1 == b and c2 == a):
-            return (a, b)
-    return None
-
-
-def _calc_gamma_wilson(components: List[str], T: float, xs: List[float]) -> Optional[List[float]]:
-    """Wilson 活度系数计算（仅二元体系）"""
-    key = _resolve_wilson_nrtl_key(components)
-    if key is None or "wilson" not in _WILSON_NRTL_DB.get(key, {}):
-        return None
-    params = _WILSON_NRTL_DB[key]["wilson"]
-    L12, L21 = params["Lambda_12"], params["Lambda_21"]
-    V1, V2 = 1.0, 1.0
-    for i, name in enumerate(components):
-        crit = get_critical_constants(name)
-        if crit and crit[3] > 0:
-            if i == 0: V1 = crit[3]
-            else: V2 = crit[3]
-    Lambda_12 = (V2 / V1) * math.exp(-L12 / (R_GAS * T)) if V1 > 0 else 1.0
-    Lambda_21 = (V1 / V2) * math.exp(-L21 / (R_GAS * T)) if V2 > 0 else 1.0
-    x1, x2 = xs[0], xs[1]
-    denom1 = x1 + x2 * Lambda_12
-    denom2 = x1 * Lambda_21 + x2
-    if abs(denom1) < 1e-15 or abs(denom2) < 1e-15:
-        return [1.0, 1.0]
-    ln_gamma1 = -math.log(denom1) + x2 * (Lambda_12 / denom1 - Lambda_21 / denom2)
-    ln_gamma2 = -math.log(denom2) - x1 * (Lambda_12 / denom1 - Lambda_21 / denom2)
-    return [math.exp(ln_gamma1), math.exp(ln_gamma2)]
-
-
-def _calc_gamma_nrtl(components: List[str], T: float, xs: List[float]) -> Optional[List[float]]:
-    """NRTL 活度系数计算（仅二元体系）"""
-    key = _resolve_wilson_nrtl_key(components)
-    if key is None or "nrtl" not in _WILSON_NRTL_DB.get(key, {}):
-        return None
-    params = _WILSON_NRTL_DB[key]["nrtl"]
-    tau_12 = params["tau_12"] / (R_GAS * T)
-    tau_21 = params["tau_21"] / (R_GAS * T)
-    alpha = params["alpha"]
-    G12 = math.exp(-alpha * tau_12)
-    G21 = math.exp(-alpha * tau_21)
-    x1, x2 = xs[0], xs[1]
-    denom1 = x1 + x2 * G21
-    denom2 = x2 + x1 * G12
-    if abs(denom1) < 1e-15 or abs(denom2) < 1e-15:
-        return [1.0, 1.0]
-    ln_gamma1 = x2**2 * (tau_21 * (G21 / denom1)**2 + tau_12 * G12 / denom2**2)
-    ln_gamma2 = x1**2 * (tau_12 * (G12 / denom2)**2 + tau_21 * G21 / denom1**2)
-    return [math.exp(ln_gamma1), math.exp(ln_gamma2)]
-
-
-def _can_use_wilson(components: List[str]) -> bool:
-    return _resolve_wilson_nrtl_key(components) is not None and len(components) == 2
-
-
-def _can_use_nrtl(components: List[str]) -> bool:
-    key = _resolve_wilson_nrtl_key(components)
-    return key is not None and "nrtl" in _WILSON_NRTL_DB.get(key, {}) and len(components) == 2
-
-
 def _can_use_unifac(components: List[str]) -> bool:
     if UNIFAC_gammas_fn is None:
         return False
@@ -1800,151 +1715,6 @@ def _can_use_unifac(components: List[str]) -> bool:
         if not chem or not getattr(chem, 'UNIFAC_groups', None):
             return False
     return True
-
-
-# ============================================================
-# Henry 常数数据库 (Sander 2015, Atmos. Chem. Phys.)
-# 适用于稀薄气体溶解于水，摩尔分数基准
-# 关联式: ln(H_x / Pa) = A - B * (1/T - 1/T_ref)
-#   T_ref = 298.15 K, A = ln(H_ref)
-#   B 直接取自 Sander(2015) 表中 d ln(H^cp)/d(1/T) 系数 (均为正值)
-#
-# ⚠ 修复说明:
-#   Sander(2015) 表里的 B 是对 H^cp [mol/(m³·Pa)]（溶解度型亨利常数，
-#   数值越大代表越易溶）定义的: d ln(H^cp)/d(1/T) = B (>0)，即温度越低
-#   （1/T 越大）该气体越易溶、H^cp 越大。
-#   本模块用的是 H_x [Pa]（分压型: p = H_x·x, K = H_x/P），它与 H^cp
-#   互为倒数关系，因此温度依赖的符号要反过来：
-#       ln(H_x) = ln(H_x,ref) - B * (1/T - 1/T_ref)
-#   原代码写成 "+ B*(...)"，导致算出的 H_x（进而 K=H_x/P）随温度升高
-#   反而下降，方向与实际相反（CO2/O2/N2/CH4 等常见气体在 0~150°C 范围
-#   内都是温度越高溶解度越低、H_x 应越大）。现已改为减号。
-# ============================================================
-_T_HENRY_REF = 298.15  # K
-
-# {canonical_name: (H_ref [Pa] @298.15K, B [K], description)}
-_HENRY_WATER_DB: Dict[str, Tuple[float, float, str]] = {
-    'CO2':  (1.648e8, 2400.0, 'carbon dioxide'),
-    'H2S':  (1.024e8, 2100.0, 'hydrogen sulfide'),
-    'SO2':  (1.250e5, 3120.0, 'sulfur dioxide'),
-    'NH3':  (5.900e0, 4110.0, 'ammonia'),
-    'N2':   (1.608e9, 1300.0, 'nitrogen'),
-    'O2':   (4.349e9, 1700.0, 'oxygen'),
-    'H2':   (7.835e9,  500.0, 'hydrogen'),
-    'CO':   (1.060e9, 1300.0, 'carbon monoxide'),
-    'CH4':  (4.186e9, 1600.0, 'methane'),
-    'N2O':  (2.543e8, 2300.0, 'nitrous oxide'),
-    'C2H6': (2.063e10, 2000.0, 'ethane'),
-    'C3H8': (1.520e10, 2500.0, 'propane'),
-    'NO':   (6.580e9, 1480.0, 'nitric oxide'),
-    'Ar':   (4.049e9, 1400.0, 'argon'),
-    'He':   (2.705e10, 230.0, 'helium'),
-    'Kr':   (2.398e9, 1700.0, 'krypton'),
-    'Xe':   (4.510e8, 2100.0, 'xenon'),
-    'Cl2':  (9.670e6, 2500.0, 'chlorine'),
-}
-
-# 别名映射 → canonical name
-_HENRY_ALIASES: Dict[str, str] = {
-    'carbon dioxide': 'CO2', 'co2': 'CO2',
-    'hydrogen sulfide': 'H2S', 'h2s': 'H2S',
-    'sulfur dioxide': 'SO2', 'so2': 'SO2',
-    'ammonia': 'NH3', 'nh3': 'NH3',
-    'nitrogen': 'N2', 'n2': 'N2',
-    'oxygen': 'O2', 'o2': 'O2',
-    'hydrogen': 'H2', 'h2': 'H2',
-    'carbon monoxide': 'CO', 'co': 'CO',
-    'methane': 'CH4', 'ch4': 'CH4',
-    'nitrous oxide': 'N2O', 'n2o': 'N2O',
-    'ethane': 'C2H6', 'c2h6': 'C2H6',
-    'propane': 'C3H8', 'c3h8': 'C3H8',
-    'nitric oxide': 'NO', 'no': 'NO',
-    'argon': 'Ar', 'ar': 'Ar',
-    'helium': 'He', 'he': 'He',
-    'krypton': 'Kr', 'kr': 'Kr',
-    'xenon': 'Xe', 'xe': 'Xe',
-    'chlorine': 'Cl2', 'cl2': 'Cl2',
-}
-
-# 轻气体集合（用于检测气体-水体系）
-_LIGHT_GAS_NAMES: frozenset = frozenset(_HENRY_WATER_DB.keys())
-_WATER_NAMES: frozenset = frozenset({'water', 'Water', 'H2O', 'h2o'})
-
-
-def _resolve_henry_name(name: str) -> Optional[str]:
-    """将物质名称映射到 Henry 数据库的 canonical name。"""
-    if name in _HENRY_WATER_DB:
-        return name
-    lower = name.lower().strip()
-    mapped = _HENRY_ALIASES.get(lower)
-    if mapped:
-        return mapped
-    # 尝试 thermo 名称归一化
-    chem = _get_chem(name)
-    if chem:
-        chem_name = getattr(chem, 'name', name)
-        if chem_name in _HENRY_WATER_DB:
-            return chem_name
-        mapped2 = _HENRY_ALIASES.get(chem_name.lower().strip())
-        if mapped2:
-            return mapped2
-    return None
-
-
-def _is_gas_water_system(components: List[str]) -> bool:
-    """检测体系是否为气体-水混合物（存在轻气体 + 水）。"""
-    has_gas = False
-    has_water = False
-    for c in components:
-        if _resolve_henry_name(c) is not None:
-            has_gas = True
-        if c in _WATER_NAMES or c.lower().strip() in ('water', 'h2o'):
-            has_water = True
-    return has_gas and has_water
-
-
-def calc_henry_constant(name: str, T: float = 298.15,
-                        solvent: str = 'water') -> Optional[float]:
-    """
-    计算气体在水中的亨利常数 H_x [Pa]（摩尔分数基准, p = H_x·x）。
-
-    基于 Sander (2015) 文献关联式（已修正符号，见模块级注释）：
-        ln(H_x / Pa) = A - B * (1/T - 1/T_ref)
-        T_ref = 298.15 K
-
-    Parameters
-    ----------
-    name : str
-        气体名称（如 'CO2', 'H2S', 'N2', 'O2', 'CH4' 等）
-    T : float
-        温度 [K]，有效范围 273-373 K
-    solvent : str
-        溶剂名称，当前仅支持 'water'
-
-    Returns
-    -------
-    float or None
-        亨利常数 H_x [Pa]，无数据时返回 None
-
-    Notes
-    -----
-    K_i = H_x / P（当溶剂为水、稀溶液条件下）
-    对于非理想性强的气体-水体系，Henry 定律远优于 Raoult 定律。
-    H_x 随温度升高而增大（多数常见气体在 0~150°C 范围内溶解度随温度
-    升高而降低），例如 CO2: 25°C≈1670atm → 50°C≈2960atm → 100°C≈5710atm。
-
-    References
-    ----------
-    Sander, R. (2015). Atmos. Chem. Phys., 15, 4399-4981.
-    """
-    if solvent.lower().strip() not in ('water', 'h2o'):
-        return None
-    canon = _resolve_henry_name(name)
-    if canon is None:
-        return None
-    H_ref, B, _ = _HENRY_WATER_DB[canon]
-    lnH = math.log(H_ref) - B * (1.0 / T - 1.0 / _T_HENRY_REF)
-    return math.exp(lnH)
 
 
 def _has_supercritical_component(components: List[str], T: float) -> bool:
@@ -1956,20 +1726,16 @@ def _has_supercritical_component(components: List[str], T: float) -> bool:
 
 
 def _auto_k_method(components: List[str], T: float, P: float) -> str:
-    """自动选择 K 值计算方法。
-
-    方法优先级（数据驱动分层策略）:
-      ① henry — 气体-水体系（低压），Henry 定律处理溶解气体
-      ② eos_pr — 高压 (>15 bar) 或超临界组分
-      ③ unifac — 所有组分有 UNIFAC 基团数据（低压非理想体系默认方法）
-      ④ wilson — 二元体系有实验回归参数（仅当显式指定时启用）
-      ⑤ nrtl — 二元体系有实验回归参数（仅当显式指定时启用）
-      ⑥ raoult — 兜底 Raoult 定律
-
-    设计原则: UNIFAC 基于基团贡献法，无需实验拟合，通用精度最高；
-    Wilson/NRTL 参数为拟合常数，仅在有实验数据回归时才优于 UNIFAC。
     """
-    # ① 气体-水体系 + 低压 → Henry 定律
+    自动选择 K 值计算方法（基于温度、压力、组分）。
+
+    优先级:
+      1. henry — 水 + 已验证可自动 Henry 的轻组分（低压）
+      2. eos_pr — 高压 (>15 bar) 或超临界组分
+      3. unifac — 所有组分有 UNIFAC 基团数据且压力适合
+      4. raoult — 兜底 Raoult 定律
+    """
+    # ① 水 + 可自动 Henry 的已知轻组分 + 低压 → Henry 定律
     if _is_gas_water_system(components) and P < 1.5e6:
         return "henry"
     # ② 超临界组分 → EOS
@@ -1979,86 +1745,815 @@ def _auto_k_method(components: List[str], T: float, P: float) -> str:
     Pr_max = max((get_reduced_properties(n, T, P)[1] for n in components), default=0.0)
     if P > 1.5e6 or Pr_max > 0.15:
         return "eos_pr"
-    # ④ UNIFAC 可用 → 基团贡献法（默认首选）
-    if _can_use_unifac(components):
+    # ④ UNIFAC 可用且压力不太高 → 活度系数法
+    if _can_use_unifac(components) and P < 2e6:   # 压力上限 2 MPa
         return "unifac"
-    # ⑤ Wilson 活度系数（二元体系，需实验回归参数）
-    if _can_use_wilson(components):
-        return "wilson"
-    # ⑥ NRTL 活度系数（二元体系，需实验回归参数）
-    if _can_use_nrtl(components):
-        return "nrtl"
-    # ⑦ 兜底 Raoult
+    # ⑤ 兜底 Raoult
     return "raoult"
+
+
+# ============================================================
+# Henry 常数：水为溶剂
+# 数据口径：Sander v5.0.0 (2023) H_s^cp = c_aq / p [mol m^-3 Pa^-1]
+# 运行时转换为 H_x = p/x [Pa]，供 K_i = H_x/P 使用。
+# O2/N2/CO2 在其推荐温区优先采用专门的高精度 H_x(T) 关联式。
+# ============================================================
+_T_HENRY_REF = 298.15
+
+# {canonical_name: (Hscp_ref [mol/m^3/Pa] @298.15K, B [K], description, CAS)}
+_HENRY_WATER_DB: Dict[str, Tuple[float, float, str, str]] = {
+    'CO2': (0.00034, 2300, 'carbon dioxide', '124-38-9'),
+    'H2S': (0.001, 2100, 'hydrogen sulfide', '7783-06-4'),
+    'SO2': (0.013, 2900, 'sulfur dioxide', '7446-09-5'),
+    'NH3': (0.59, 4200, 'ammonia', '7664-41-7'),
+    'N2': (6.4e-06, 1300, 'nitrogen', '7727-37-9'),
+    'O2': (1.3e-05, 1500, 'oxygen', '7782-44-7'),
+    'H2': (7.8e-06, 530, 'hydrogen', '1333-74-0'),
+    'CO': (9.7e-06, 1300, 'carbon monoxide', '630-08-0'),
+    'CH4': (1.4e-05, 1600, 'methane', '74-82-8'),
+    'N2O': (0.00024, 2600, 'nitrous oxide', '10024-97-2'),
+    'C2H6': (1.9e-05, 2400, 'ethane', '74-84-0'),
+    'C3H8': (1.5e-05, 2700, 'propane', '74-98-6'),
+    'NO': (1.9e-05, 1600, 'nitric oxide', '10102-43-9'),
+    'Ar': (1.4e-05, 1700, 'argon', '7440-37-1'),
+    'He': (3.9e-06, 15, 'helium', '7440-59-7'),
+    'Kr': (2.5e-05, 1700, 'krypton', '7439-90-9'),
+    'Xe': (4.4e-05, 2200, 'xenon', '7440-63-3'),
+    'Cl2': (0.00061, 3200, 'chlorine', '7782-50-5'),
+    'SF6': (2.4e-06, 3100, 'sulfur hexafluoride', '2551-62-4'),
+    'ethanol': (1.9, 6400, 'ethanol', '64-17-5'),
+    'methanol': (2, 5500, 'methanol', '67-56-1'),
+    'acetone': (0.27, 5500, 'acetone', '67-64-1'),
+    'n-butane': (1.2e-05, 3100, 'butane', '106-97-8'),
+    'isobutane': (9.1e-06, 2700, 'isobutane', '75-28-5'),
+    'ethylene': (5.9e-05, 2200, 'ethylene', '74-85-1'),
+    'propylene': (5.6e-05, 2600, 'propylene', '115-07-1'),
+    'acetylene': (0.00041, 1800, 'acetylene', '74-86-2'),
+    'benzene': (0.0018, 3800, 'benzene', '71-43-2'),
+    'toluene': (0.0016, 4100, 'toluene', '108-88-3'),
+    'HCN': (0.089, 8200, 'hydrogen cyanide', '74-90-8'),
+    'ethylene oxide': (0.058, 3200, 'ethylene oxide', '75-21-8'),
+    'formaldehyde': (32, 7100, 'formaldehyde', '50-00-0'),
+    'ethylbenzene': (0.0014, 4500, 'ethylbenzene', '100-41-4'),
+    'o-xylene': (0.002, 4600, 'o-xylene', '95-47-6'),
+    'm-xylene': (0.0014, 4100, 'm-xylene', '108-38-3'),
+    'p-xylene': (0.0015, 5000, 'p-xylene', '106-42-3'),
+    'methyl ethyl ketone': (0.18, 5700, 'methyl ethyl ketone', '78-93-3'),
+    'ethyl acetate': (0.065, 5600, 'ethyl acetate', '141-78-6'),
+    'acetonitrile': (0.52, 4000, 'acetonitrile', '75-05-8'),
+    'dichloromethane': (0.0039, 3500, 'dichloromethane', '75-09-2'),
+    'chloroform': (0.0027, 4200, 'chloroform', '67-66-3'),
+}
+
+# CAS -> canonical name；用于 thermo 名称归一化后稳定匹配。
+_HENRY_CAS_MAP: Dict[str, str] = {
+    '124-38-9': 'CO2',
+    '7783-06-4': 'H2S',
+    '7446-09-5': 'SO2',
+    '7664-41-7': 'NH3',
+    '7727-37-9': 'N2',
+    '7782-44-7': 'O2',
+    '1333-74-0': 'H2',
+    '630-08-0': 'CO',
+    '74-82-8': 'CH4',
+    '10024-97-2': 'N2O',
+    '74-84-0': 'C2H6',
+    '74-98-6': 'C3H8',
+    '10102-43-9': 'NO',
+    '7440-37-1': 'Ar',
+    '7440-59-7': 'He',
+    '7439-90-9': 'Kr',
+    '7440-63-3': 'Xe',
+    '7782-50-5': 'Cl2',
+    '2551-62-4': 'SF6',
+    '64-17-5': 'ethanol',
+    '67-56-1': 'methanol',
+    '67-64-1': 'acetone',
+    '106-97-8': 'n-butane',
+    '75-28-5': 'isobutane',
+    '74-85-1': 'ethylene',
+    '115-07-1': 'propylene',
+    '74-86-2': 'acetylene',
+    '71-43-2': 'benzene',
+    '108-88-3': 'toluene',
+    '74-90-8': 'HCN',
+    '75-21-8': 'ethylene oxide',
+    '50-00-0': 'formaldehyde',
+    '100-41-4': 'ethylbenzene',
+    '95-47-6': 'o-xylene',
+    '108-38-3': 'm-xylene',
+    '106-42-3': 'p-xylene',
+    '78-93-3': 'methyl ethyl ketone',
+    '141-78-6': 'ethyl acetate',
+    '75-05-8': 'acetonitrile',
+    '75-09-2': 'dichloromethane',
+    '67-66-3': 'chloroform',
+}
+
+_HENRY_ALIASES: Dict[str, str] = {
+    '1,2-dimethylbenzene': 'o-xylene',
+    '1,3-dimethylbenzene': 'm-xylene',
+    '1,4-dimethylbenzene': 'p-xylene',
+    '100-41-4': 'ethylbenzene',
+    '10024-97-2': 'N2O',
+    '10102-43-9': 'NO',
+    '106-42-3': 'p-xylene',
+    '106-97-8': 'n-butane',
+    '108-38-3': 'm-xylene',
+    '108-88-3': 'toluene',
+    '115-07-1': 'propylene',
+    '124-38-9': 'CO2',
+    '1333-74-0': 'H2',
+    '141-78-6': 'ethyl acetate',
+    '2-butanone': 'methyl ethyl ketone',
+    '2-methylpropane': 'isobutane',
+    '2551-62-4': 'SF6',
+    '50-00-0': 'formaldehyde',
+    '630-08-0': 'CO',
+    '64-17-5': 'ethanol',
+    '67-56-1': 'methanol',
+    '67-64-1': 'acetone',
+    '67-66-3': 'chloroform',
+    '71-43-2': 'benzene',
+    '74-82-8': 'CH4',
+    '74-84-0': 'C2H6',
+    '74-85-1': 'ethylene',
+    '74-86-2': 'acetylene',
+    '74-90-8': 'HCN',
+    '74-98-6': 'C3H8',
+    '7439-90-9': 'Kr',
+    '7440-37-1': 'Ar',
+    '7440-59-7': 'He',
+    '7440-63-3': 'Xe',
+    '7446-09-5': 'SO2',
+    '75-05-8': 'acetonitrile',
+    '75-09-2': 'dichloromethane',
+    '75-21-8': 'ethylene oxide',
+    '75-28-5': 'isobutane',
+    '7664-41-7': 'NH3',
+    '7727-37-9': 'N2',
+    '7782-44-7': 'O2',
+    '7782-50-5': 'Cl2',
+    '7783-06-4': 'H2S',
+    '78-93-3': 'methyl ethyl ketone',
+    '95-47-6': 'o-xylene',
+    'acetone': 'acetone',
+    'acetonitrile': 'acetonitrile',
+    'acetylene': 'acetylene',
+    'ammonia': 'NH3',
+    'ar': 'Ar',
+    'argon': 'Ar',
+    'benzene': 'benzene',
+    'butane': 'n-butane',
+    'butanone': 'methyl ethyl ketone',
+    'c2h2': 'acetylene',
+    'c2h4': 'ethylene',
+    'c2h5oh': 'ethanol',
+    'c2h6': 'C2H6',
+    'c3h6': 'propylene',
+    'c3h8': 'C3H8',
+    'c6h5c2h5': 'ethylbenzene',
+    'c6h5ch3': 'toluene',
+    'c6h6': 'benzene',
+    'carbon dioxide': 'CO2',
+    'carbon monoxide': 'CO',
+    'ch3cn': 'acetonitrile',
+    'ch3oh': 'methanol',
+    'ch4': 'CH4',
+    'chlorine': 'Cl2',
+    'chloroform': 'chloroform',
+    'cl2': 'Cl2',
+    'co': 'CO',
+    'co2': 'CO2',
+    'dcm': 'dichloromethane',
+    'dichloromethane': 'dichloromethane',
+    'ethane': 'C2H6',
+    'ethanenitrile': 'acetonitrile',
+    'ethanol': 'ethanol',
+    'ethene': 'ethylene',
+    'ethyl acetate': 'ethyl acetate',
+    'ethyl alcohol': 'ethanol',
+    'ethyl ethanoate': 'ethyl acetate',
+    'ethylbenzene': 'ethylbenzene',
+    'ethylene': 'ethylene',
+    'ethylene oxide': 'ethylene oxide',
+    'ethyne': 'acetylene',
+    'formaldehyde': 'formaldehyde',
+    'h2': 'H2',
+    'h2s': 'H2S',
+    'hcho': 'formaldehyde',
+    'hcn': 'HCN',
+    'he': 'He',
+    'helium': 'He',
+    'hydrocyanic acid': 'HCN',
+    'hydrogen': 'H2',
+    'hydrogen cyanide': 'HCN',
+    'hydrogen sulfide': 'H2S',
+    'i-butane': 'isobutane',
+    'isobutane': 'isobutane',
+    'kr': 'Kr',
+    'krypton': 'Kr',
+    'm-xylene': 'm-xylene',
+    'mek': 'methyl ethyl ketone',
+    'meta-xylene': 'm-xylene',
+    'methanal': 'formaldehyde',
+    'methane': 'CH4',
+    'methanol': 'methanol',
+    'methyl alcohol': 'methanol',
+    'methyl ethyl ketone': 'methyl ethyl ketone',
+    'methylbenzene': 'toluene',
+    'methylene chloride': 'dichloromethane',
+    'n-butane': 'n-butane',
+    'n2': 'N2',
+    'n2o': 'N2O',
+    'nh3': 'NH3',
+    'nitric oxide': 'NO',
+    'nitrogen': 'N2',
+    'nitrous oxide': 'N2O',
+    'no': 'NO',
+    'o-xylene': 'o-xylene',
+    'o2': 'O2',
+    'ortho-xylene': 'o-xylene',
+    'oxirane': 'ethylene oxide',
+    'oxygen': 'O2',
+    'p-xylene': 'p-xylene',
+    'para-xylene': 'p-xylene',
+    'propane': 'C3H8',
+    'propanone': 'acetone',
+    'propene': 'propylene',
+    'propylene': 'propylene',
+    'sf6': 'SF6',
+    'so2': 'SO2',
+    'sulfur dioxide': 'SO2',
+    'sulfur hexafluoride': 'SF6',
+    'toluene': 'toluene',
+    'trichloromethane': 'chloroform',
+    'xe': 'Xe',
+    'xenon': 'Xe',
+}
+
+_WATER_NAMES = frozenset({'water', 'h2o'})
+_LIGHT_GAS_NAMES = frozenset(_HENRY_WATER_DB.keys())
+
+# 仅这些中性/弱反应性轻组分允许被 auto 路由到 Henry-water flash。
+_HENRY_AUTO_FLASH = frozenset({
+    'N2',
+    'O2',
+    'H2',
+    'CO',
+    'CH4',
+    'N2O',
+    'C2H6',
+    'C3H8',
+    'NO',
+    'Ar',
+    'He',
+    'Kr',
+    'Xe',
+    'SF6',
+    'n-butane',
+    'isobutane',
+    'ethylene',
+    'propylene',
+    'acetylene',
+})
+
+# Sander v5 单参数 van't Hoff 形式仅在本数据层声明的保守温区内使用；
+# 超出范围不静默外推。专用 O2/N2/CO2 关联式具有各自更明确的温区。
+_HENRY_GENERIC_T_MIN = 273.15
+_HENRY_GENERIC_T_MAX = 323.15
+
+# 高精度 H_x(T) 关联式：ln(H_x/GPa)=a+b*(1000/T)+c*(1000/T)^2
+# 来源：Rettich et al. oxygen/nitrogen data；Crovetto CO2 data，NIST 汇总。
+_HENRY_HPX_POLY = {
+    'O2':  (-5.733806, 5.742622, -1.070683, 274.0, 328.0),
+    'N2':  (-6.44664662, 6.38666545, -1.1397892, 278.0, 323.0),
+    'CO2': (4.800 - 4.0*math.log(10.0), 3.93440, -0.9412902, 273.0, 353.0),
+}
+
+def _resolve_henry_name(name: str) -> Optional[str]:
+    """将名称/CAS/thermo 可识别名称映射到 Henry 数据库 canonical name。"""
+    if not isinstance(name, str) or not name.strip():
+        return None
+    raw = name.strip()
+    if raw in _HENRY_WATER_DB:
+        return raw
+    mapped = _HENRY_ALIASES.get(raw.lower())
+    if mapped:
+        return mapped
+    chem = _get_chem(raw)
+    if chem:
+        cas = getattr(chem, 'CAS', None)
+        if cas in _HENRY_CAS_MAP:
+            return _HENRY_CAS_MAP[cas]
+        chem_name = str(getattr(chem, 'name', raw)).lower().strip()
+        mapped2 = _HENRY_ALIASES.get(chem_name)
+        if mapped2:
+            return mapped2
+    return None
+
+def _is_gas_water_system(components: List[str]) -> bool:
+    """仅当体系=水 + 可自动使用 Henry 的已知溶质时返回 True。"""
+    has_water = False
+    has_solute = False
+    for c in components:
+        key = str(c).lower().strip()
+        if key in _WATER_NAMES:
+            has_water = True
+            continue
+        canon = _resolve_henry_name(str(c))
+        if canon is None or canon not in _HENRY_AUTO_FLASH:
+            return False
+        has_solute = True
+    return has_water and has_solute
+
+def _water_molar_density_for_henry(T: float) -> Optional[float]:
+    """水液相摩尔密度 [mol/m^3]，用于 Hscp -> Hpx 转换。"""
+    rho = calc_liquid_density('water', T, 101325.0)
+    if rho is None or rho <= 0:
+        return None
+    mw = get_molecular_weight('water') or 18.01528  # g/mol
+    return rho / (mw / 1000.0)
+
+def calc_henry_constant(name: str, T: float = 298.15,
+                        solvent: str = 'water') -> Optional[float]:
+    """
+    计算气体在水中的 Henry 常数 H_x [Pa]，定义 p_i = H_x x_i。
+
+    1) O2/N2/CO2：在文献推荐温区优先用高精度 H_x(T) 多项式；
+    2) 其他物质：用 Sander v5 H_s^cp(T)=H_ref*exp[B(1/T-1/Tref)]，
+       再以 H_x=rho_water,molar/H_s^cp 转为 Pa。
+
+    注意：NH3/H2S/SO2/Cl2/HCN/CO2 等有水解、解离或反应性；
+    本函数给出的是物理 Henry 分配常数，不等于含反应/电解质平衡的总溶解度。
+    """
+    if not math.isfinite(T) or T <= 0:
+        return None
+    if solvent.lower().strip() not in ('water', 'h2o'):
+        return None
+    canon = _resolve_henry_name(name)
+    if canon is None:
+        return None
+
+    # 高精度直接 Hpx 关联式；O2 在 274-328 K 可重现实验 Henry fugacity 数据。
+    corr = _HENRY_HPX_POLY.get(canon)
+    if corr is not None:
+        a, b, c, Tmin, Tmax = corr
+        if Tmin <= T <= Tmax:
+            theta = 1000.0 / T
+            return 1e9 * math.exp(a + b*theta + c*theta*theta)
+
+    if not (_HENRY_GENERIC_T_MIN <= T <= _HENRY_GENERIC_T_MAX):
+        warnings.warn(
+            f"{name}: T={T} K is outside the curated generic Henry range "
+            f"[{_HENRY_GENERIC_T_MIN}, {_HENRY_GENERIC_T_MAX}] K",
+            UserWarning,
+        )
+        return None
+
+    Hscp_ref, B, _, _ = _HENRY_WATER_DB[canon]
+    Hscp = Hscp_ref * math.exp(B * (1.0/T - 1.0/_T_HENRY_REF))
+    if Hscp <= 0 or not math.isfinite(Hscp):
+        return None
+    rho_molar = _water_molar_density_for_henry(T)
+    if rho_molar is None:
+        return None
+    Hpx = rho_molar / Hscp
+    return Hpx if Hpx > 0 and math.isfinite(Hpx) else None
+
+def _calc_Ks_henry(components: List[str], T: float, P: float,
+                   zs: List[float]) -> Optional[List[float]]:
+    """Henry/水蒸气压混合 K 值；保留原函数名。"""
+    if not math.isfinite(P) or P <= 0:
+        return None
+    Ks = []
+    for c in components:
+        key = str(c).lower().strip()
+        if key in _WATER_NAMES:
+            Psat = calc_vapor_pressure(str(c), T)
+            if Psat is None or Psat <= 0:
+                return None
+            Ks.append(Psat / P)
+            continue
+
+        canon = _resolve_henry_name(str(c))
+        if canon is None:
+            return None
+        if canon not in _HENRY_AUTO_FLASH:
+            warnings.warn(
+                f"{c}: physical Henry constant is available, but aqueous reaction/speciation or broad liquid-composition effects may be important",
+                UserWarning,
+            )
+        H = calc_henry_constant(str(c), T)
+        if H is None:
+            return None
+        Ks.append(H / P)
+    return Ks
+
+def _calc_Ks_eos(components: List[str], T: float, P: float,
+                 zs: List[float], eos_type: str = 'pr') -> Optional[List[float]]:
+    """
+    EOS 计算 K 值 (PR 或 SRK)。
+    包含组成归一化、临界性质检查、kij 缺失处理。
+    """
+    # 1. 归一化
+    z_sum = sum(zs)
+    if abs(z_sum - 1.0) > 1e-12:
+        zs = [z / z_sum for z in zs]
+
+    EOS_cls = PRMIX if eos_type.lower() == 'pr' else SRKMIX
+    Tcs, Pcs, omegas, CASs = [], [], [], []
+    for c in components:
+        crit = get_critical_constants(c)
+        if not crit:
+            return None
+        Tc, Pc, _, _, omega, _ = crit
+        if Tc is None or Pc is None or omega is None:
+            return None
+        Tcs.append(Tc); Pcs.append(Pc); omegas.append(omega)
+        ch = _get_chem(c)
+        CASs.append(ch.CAS if ch else None)
+
+    # 2. 获取 kij 矩阵
+    kijs = None
+    if IPDB and all(CASs):
+        try:
+            kijs = IPDB.get_ip_symmetric_matrix('ChemSep PR', CASs, 'kij')
+        except Exception:
+            pass
+    if kijs is None:
+        # 没有 kij，使用零矩阵
+        n = len(components)
+        kijs = [[0.0]*n for _ in range(n)]
+
+    # 3. 构建 EOS 并计算
+    try:
+        eos = EOS_cls(T=T, P=P, Tcs=Tcs, Pcs=Pcs, omegas=omegas,
+                      zs=zs, kijs=kijs)
+        if eos is None:
+            return None
+        # 检查 lnphi 是否存在
+        if hasattr(eos, 'lnphis_l') and hasattr(eos, 'lnphis_g'):
+            Ks = [math.exp(float(eos.lnphis_l[i]) - float(eos.lnphis_g[i]))
+                  for i in range(len(components))]
+            # 过滤非法值
+            if any(k <= 0 or math.isnan(k) for k in Ks):
+                return None
+            return Ks
+        return None
+    except Exception:
+        return None
+
+
+def _calc_Ks_unifac(components: List[str], T: float, P: float,
+                    zs: List[float]) -> Optional[List[float]]:
+    """
+    UNIFAC 活度系数法计算 K 值，增加低压限制和气相逸度修正。
+    仅当 P < 2 MPa 且所有组分有 UNIFAC 基团。
+    """
+    if P >= 2e6:
+        return None   # 压力过高，UNIFAC 不适用
+    if not _can_use_unifac(components):
+        return None
+    try:
+        cgs = [_get_chem(c).UNIFAC_groups for c in components]
+        gammas = UNIFAC_gammas_fn(T=T, xs=zs, chemgroups=cgs)
+        Ks = []
+        for i, c in enumerate(components):
+            Psat = calc_vapor_pressure(c, T)
+            if Psat is None or Psat <= 0:
+                return None   # 蒸气压缺失，UNIFAC 无法使用
+            # 气相逸度系数 φ_i^vap ≈ 1 或从 EOS 估算（可选）
+            # 这里简化为 1，但可以进一步用 EOS 计算
+            phi_vap = 1.0
+            # 修正：K_i = γ_i * Psat_i / (P * φ_i^vap)
+            Ks.append(gammas[i] * Psat / (P * phi_vap))
+        return Ks
+    except Exception:
+        return None
+
+
+def _calc_Ks_raoult(components: List[str], T: float, P: float) -> Optional[List[float]]:
+    """
+    Raoult 定律 fallback，严格检查蒸气压。
+    """
+    Ks = []
+    for c in components:
+        Psat = calc_vapor_pressure(c, T)
+        if Psat is None or Psat <= 0:
+            # 蒸气压计算失败，不能伪造物性
+            return None
+        Ks.append(Psat / P)
+    return Ks
 
 
 def _calc_Ks(components: List[str], T: float, P: float,
              zs: List[float], method: str = "auto") -> List[float]:
-    if method == "auto":
-        method = _auto_k_method(components, T, P)
+    """
+    核心 K 值计算，带自动降级循环。
 
-    # ---- Henry 定律: 气体-水体系 ----
-    if method == "henry":
-        Ks = []
-        for c in components:
-            canon = _resolve_henry_name(c)
-            if canon is not None:
-                H = calc_henry_constant(c, T)
-                Ks.append(H / P if H else 1.0)
-            else:
-                # 溶剂 (水) 或其他非气体组分 → Raoult
-                Ks.append((_safe_float(calc_vapor_pressure(c, T)) or P) / P)
+    方法优先级顺序（由 _auto_k_method 决定首选）：
+        henry → eos_pr → eos_srk → unifac → raoult
+
+    如果首选失败，自动尝试下一级，直至成功或全部失败。
+    """
+    if method == "auto":
+        order = ['henry', 'eos_pr', 'eos_srk', 'unifac', 'raoult']
+        # 获取首选索引
+        preferred = _auto_k_method(components, T, P)
+        try:
+            idx = order.index(preferred)
+        except ValueError:
+            idx = 0
+        # 从首选开始尝试
+        for m in order[idx:]:
+            Ks = _try_k_method(m, components, T, P, zs)
+            if Ks is not None:
+                return Ks
+        # 所有方法失败，抛异常
+        raise ValueError(f"无法计算 K 值: 所有方法失败 for {components} at T={T}, P={P}")
+    else:
+        # 用户指定方法
+        Ks = _try_k_method(method, components, T, P, zs)
+        if Ks is None:
+            raise ValueError(f"指定方法 '{method}' 计算 K 值失败 for {components} at T={T}, P={P}")
         return Ks
 
-    # ---- EOS (Peng-Robinson / SRK) ----
-    if method in ("eos_pr", "eos_srk"):
-        EOS_cls = PRMIX if method == "eos_pr" else SRKMIX
-        Tcs, Pcs, omegas, CASs, ok = [], [], [], [], True
-        for c in components:
-            crit = get_critical_constants(c)
-            if not crit:
-                ok = False; break
-            Tcs.append(crit[0]); Pcs.append(crit[1]); omegas.append(crit[4])
-            ch = _get_chem(c)
-            CASs.append(ch.CAS if ch else None)
-        if ok:
-            try:
-                kijs = (IPDB.get_ip_symmetric_matrix('ChemSep PR', CASs, 'kij')
-                        if IPDB and all(CASs) else None)
-                eos = EOS_cls(T=T, P=P, Tcs=Tcs, Pcs=Pcs, omegas=omegas,
-                              zs=zs, kijs=kijs)
-                return [math.exp(float(eos.lnphis_l[i]) - float(eos.lnphis_g[i]))
-                        for i in range(len(components))]
-            except Exception:
-                pass
 
-    # ---- Wilson 活度系数法 ----
-    if method == "wilson":
-        gammas = _calc_gamma_wilson(components, T, zs)
-        if gammas is not None:
-            return [gammas[i] * (calc_vapor_pressure(components[i], T) or 0.0) / P
-                    for i in range(len(components))]
+def _try_k_method(method: str, components: List[str], T: float, P: float,
+                  zs: List[float]) -> Optional[List[float]]:
+    """尝试单一方法，成功返回 Ks，失败返回 None"""
+    if method == "henry":
+        return _calc_Ks_henry(components, T, P, zs)
+    elif method in ("eos_pr", "eos_srk"):
+        return _calc_Ks_eos(components, T, P, zs, method.split('_')[1])
+    elif method == "unifac":
+        return _calc_Ks_unifac(components, T, P, zs)
+    elif method == "raoult":
+        return _calc_Ks_raoult(components, T, P)
+    else:
+        return None
 
-    # ---- NRTL 活度系数法 ----
-    if method == "nrtl":
-        gammas = _calc_gamma_nrtl(components, T, zs)
-        if gammas is not None:
-            return [gammas[i] * (calc_vapor_pressure(components[i], T) or 0.0) / P
-                    for i in range(len(components))]
 
-    # ---- UNIFAC 活度系数法 ----
-    if method == "unifac" and UNIFAC_gammas_fn:
+# ============================================================
+# 泡点 / 露点温度 (使用 Brent 求根)
+# ============================================================
+
+def _find_root_brent(func, xa, xb, args=(), xtol=1e-6, maxiter=100):
+    """
+    使用 scipy Brent 求根，若不可用则回退二分法。
+    返回 (root, converged, residual)
+    """
+    try:
+        from scipy.optimize import brentq
+        root = brentq(func, xa, xb, args=args, xtol=xtol, maxiter=maxiter)
+        return root, True, func(root, *args)
+    except (ImportError, Exception):
+        # 二分法 fallback
+        fa = func(xa, *args)
+        fb = func(xb, *args)
+        if fa * fb > 0:
+            return None, False, None
+        for _ in range(maxiter):
+            xc = (xa + xb) / 2.0
+            fc = func(xc, *args)
+            if abs(fc) < xtol:
+                return xc, True, fc
+            if fa * fc < 0:
+                xb = xc; fb = fc
+            else:
+                xa = xc; fa = fc
+        return (xa + xb) / 2.0, False, func((xa+xb)/2.0, *args)
+
+
+def calc_bubble_point_T(components: List[str], x: List[float], P: float,
+                        method: str = "auto", tol: float = 1e-4,
+                        max_iter: int = 200) -> Dict:
+    """
+    泡点温度，使用 Brent 求根，返回 T, T_C, y, K, residual, converged, method。
+    """
+    n = len(components)
+    # 尝试 thermo Mixture 快速求解
+    try:
+        m = Mixture(components, zs=x, P=P)
+        Tb = float(m.Tbubble)
+        return {"T": round(Tb, 4), "T_C": round(Tb-273.15, 4), "y": list(m.ys or []),
+                "K": [m.ys[i]/x[i] if x[i] > 0 else 1.0 for i in range(n)],
+                "method": "Mixture", "converged": True, "residual": 0.0}
+    except Exception:
+        pass
+
+    # 定义残差函数 f(T) = sum(K_i * x_i) - 1
+    def residual(Temp):
         try:
-            cgs = [_get_chem(c).UNIFAC_groups for c in components]
-            gammas = UNIFAC_gammas_fn(T=T, xs=zs, chemgroups=cgs)
-            return [gammas[i] * (calc_vapor_pressure(components[i], T) or 0.0) / P
-                    for i in range(len(components))]
+            Ks = _calc_Ks(components, Temp, P, x, method)
+            return sum(Ks[i] * x[i] for i in range(n)) - 1.0
         except Exception:
-            pass
+            return float('nan')
 
-    # ---- 兜底 Raoult ----
-    return [(_safe_float(calc_vapor_pressure(c, T)) or P) / P for c in components]
+    # 确定温度区间 [Tlow, Thigh]
+    # 下限：最低的正常沸点或 100 K
+    Tlow = 100.0
+    for c in components:
+        Tb = get_normal_boiling_point(c)
+        if Tb is not None and Tb < Tlow:
+            Tlow = Tb
+    Tlow = max(Tlow, 100.0)
+    # 上限：最高临界温度或 1200 K
+    Thigh = 1200.0
+    for c in components:
+        crit = get_critical_constants(c)
+        if crit and crit[0] > Thigh:
+            Thigh = crit[0]
+    Thigh = min(Thigh, 1200.0)
 
+    root, converged, res = _find_root_brent(residual, Tlow, Thigh,
+                                            xtol=tol, maxiter=max_iter)
+    if root is None:
+        # 如果求根失败，使用简单迭代作为最后手段
+        T = 350.0
+        for _ in range(max_iter):
+            try:
+                Ks = _calc_Ks(components, T, P, x, method)
+                sum_Kx = sum(Ks[i]*x[i] for i in range(n))
+                if abs(sum_Kx - 1.0) < tol:
+                    root = T
+                    converged = True
+                    res = sum_Kx - 1.0
+                    break
+                # 简单的更新
+                T += max(-20.0, min(20.0, (1.0 - sum_Kx) * T * 0.02))
+                if T < 100: T = 100
+                if T > 1200: T = 1200
+            except Exception:
+                break
+        else:
+            converged = False
+            root = T if root is None else root
+
+    # 重新计算 K 和 y
+    try:
+        Ks = _calc_Ks(components, root, P, x, method)
+    except Exception:
+        Ks = [1.0]*n
+    y = [Ks[i]*x[i] for i in range(n)]
+    sy = sum(y)
+    if sy > 0:
+        y = [v/sy for v in y]
+    else:
+        y = [1.0/n]*n
+
+    return {
+        "T": round(root, 4) if root is not None else None,
+        "T_C": round(root-273.15, 4) if root is not None else None,
+        "y": y,
+        "K": Ks,
+        "method": method if method != "auto" else _auto_k_method(components, root, P),
+        "converged": converged,
+        "residual": res if res is not None else 0.0
+    }
+
+
+def calc_dew_point_T(components: List[str], y: List[float], P: float,
+                     method: str = "auto", tol: float = 1e-4,
+                     max_iter: int = 200) -> Dict:
+    """
+    露点温度，使用 Brent 求根，返回 T, T_C, x, K, residual, converged, method。
+    """
+    n = len(components)
+    try:
+        m = Mixture(components, zs=y, P=P)
+        Td = float(m.Tdew)
+        return {"T": round(Td, 4), "T_C": round(Td-273.15, 4), "x": list(m.xs or []),
+                "K": [y[i]/m.xs[i] if m.xs[i] > 0 else 1.0 for i in range(n)],
+                "method": "Mixture", "converged": True, "residual": 0.0}
+    except Exception:
+        pass
+
+    def residual(Temp):
+        try:
+            Ks = _calc_Ks(components, Temp, P, y, method)
+            return sum(y[i] / Ks[i] for i in range(n)) - 1.0
+        except Exception:
+            return float('nan')
+
+    Tlow = 100.0
+    for c in components:
+        Tb = get_normal_boiling_point(c)
+        if Tb is not None and Tb < Tlow:
+            Tlow = Tb
+    Tlow = max(Tlow, 100.0)
+    Thigh = 1200.0
+    for c in components:
+        crit = get_critical_constants(c)
+        if crit and crit[0] > Thigh:
+            Thigh = crit[0]
+    Thigh = min(Thigh, 1200.0)
+
+    root, converged, res = _find_root_brent(residual, Tlow, Thigh,
+                                            xtol=tol, maxiter=max_iter)
+    if root is None:
+        T = 360.0
+        for _ in range(max_iter):
+            try:
+                Ks = _calc_Ks(components, T, P, y, method)
+                sum_yK = sum(y[i]/Ks[i] for i in range(n))
+                if abs(sum_yK - 1.0) < tol:
+                    root = T
+                    converged = True
+                    res = sum_yK - 1.0
+                    break
+                T += max(-20.0, min(20.0, (sum_yK - 1.0) * T * 0.02))
+                if T < 100: T = 100
+                if T > 1200: T = 1200
+            except Exception:
+                break
+        else:
+            converged = False
+            root = T if root is None else root
+
+    try:
+        Ks = _calc_Ks(components, root, P, y, method)
+    except Exception:
+        Ks = [1.0]*n
+    x = [y[i]/Ks[i] for i in range(n)]
+    sx = sum(x)
+    if sx > 0:
+        x = [v/sx for v in x]
+    else:
+        x = [1.0/n]*n
+
+    return {
+        "T": round(root, 4) if root is not None else None,
+        "T_C": round(root-273.15, 4) if root is not None else None,
+        "x": x,
+        "K": Ks,
+        "method": method if method != "auto" else _auto_k_method(components, root, P),
+        "converged": converged,
+        "residual": res if res is not None else 0.0
+    }
+
+
+def calc_bubble_point_P(components: List[str], x: List[float], T: float,
+                        method: str = "auto") -> Dict:
+    """
+    泡点压力，使用改进的 fallback（严格检查）。
+    """
+    try:
+        m = Mixture(components, zs=x, T=T)
+        Pb = float(m.Pbubble)
+        return {"P": Pb, "P_MPa": Pb/1e6,
+                "K": [m.ys[i]/x[i] if x[i] > 0 else 1.0 for i in range(len(x))],
+                "method": "Mixture", "converged": True}
+    except Exception:
+        pass
+
+    # 使用 _calc_Ks 尝试，但需要迭代压力。
+    # 简单做法：先用 Raoult 估算
+    P_est = 0.0
+    for i, c in enumerate(components):
+        Psat = calc_vapor_pressure(c, T)
+        if Psat is None or Psat <= 0:
+            raise ValueError(f"组分 {c} 在 {T}K 的蒸气压缺失，无法计算泡点压力")
+        P_est += x[i] * Psat
+    if P_est == 0:
+        raise ValueError("泡点压力估算为零")
+    return {"P": P_est, "P_MPa": P_est/1e6,
+            "K": [calc_vapor_pressure(c, T)/P_est if P_est>0 else 1.0 for c in components],
+            "method": "Raoult", "converged": True}
+
+
+def calc_dew_point_P(components: List[str], y: List[float], T: float,
+                     method: str = "auto") -> Dict:
+    """
+    露点压力，使用改进的 fallback（严格检查）。
+    """
+    try:
+        m = Mixture(components, zs=y, T=T)
+        Pd = float(m.Pdew)
+        return {"P": Pd, "P_MPa": Pd/1e6,
+                "K": [y[i]/m.xs[i] if m.xs[i] > 0 else 1.0 for i in range(len(y))],
+                "method": "Mixture", "converged": True}
+    except Exception:
+        pass
+
+    inv = 0.0
+    for i, c in enumerate(components):
+        Psat = calc_vapor_pressure(c, T)
+        if Psat is None or Psat <= 0:
+            raise ValueError(f"组分 {c} 在 {T}K 的蒸气压缺失，无法计算露点压力")
+        inv += y[i] / Psat
+    if inv == 0:
+        raise ValueError("露点压力估算为零")
+    Pd = 1.0 / inv
+    return {"P": Pd, "P_MPa": Pd/1e6,
+            "K": [calc_vapor_pressure(c, T)/Pd for c in components],
+            "method": "Raoult", "converged": True}
+
+
+# ============================================================
+# 其他相平衡函数 (flash, activity coefficients)
+# ============================================================
 
 def calc_activity_coefficients_unifac(components: List[str], T: float,
                                       xs: List[float]) -> Optional[List[float]]:
@@ -2084,204 +2579,13 @@ def _wilson_k_initial(components: List[str], T: float, P: float) -> List[float]:
     return Ks
 
 
-def calc_bubble_point_T(components: List[str], x: List[float], P: float,
-                        method: str = "auto", tol: float = 1e-4,
-                        max_iter: int = 200,
-                        precision: str = "normal") -> Dict:
-    """泡点温度，返回 {T, T_C, y, K, method, converged, iterations}"""
-    n = len(components)
-    _tol_map = {"normal": 1e-4, "high": 1e-6, "ultra": 1e-8}
-    _tol = _tol_map.get(precision, tol)
-    method_used = _auto_k_method(components, 400.0, P) if method == "auto" else method
-    try:
-        m = Mixture(components, zs=x, P=P)
-        Tb = float(m.Tbubble)
-        return {"T": round(Tb, 4), "T_C": round(Tb-273.15, 4), "y": list(m.ys or []),
-                "K": [m.ys[i]/x[i] if x[i] > 0 else 0 for i in range(n)],
-                "method": "Mixture", "converged": True, "iterations": 0}
-    except Exception:
-        pass
-    T_init = sum(x[i] * (get_normal_boiling_point(c) or 350.0) for i, c in enumerate(components))
-    T_init = max(100.0, min(1200.0, T_init))
-    T_prev, T_curr = T_init, T_init
-    f_prev = None
-    iter_count = 0
-    for iter_i in range(max_iter):
-        iter_count = iter_i + 1
-        Ks = _calc_Ks(components, T_curr, P, x, method_used)
-        sum_Kx = sum(Ks[i]*x[i] for i in range(n))
-        f_curr = sum_Kx - 1.0
-        if abs(f_curr) < _tol:
-            break
-        if f_prev is not None and abs(f_curr - f_prev) > 1e-12:
-            T_next = T_curr - f_curr * (T_curr - T_prev) / (f_curr - f_prev)
-        else:
-            T_next = T_curr - f_curr * T_curr * 0.03
-        T_next = max(100.0, min(1200.0, T_next))
-        T_prev, T_curr = T_curr, T_next
-        f_prev = f_curr
-        if iter_i > 30 and method_used in ("wilson", "nrtl", "unifac", "raoult"):
-            all_near_1 = all(abs(Ks[i] - 1.0) < 0.3 for i in range(n))
-            if all_near_1:
-                try:
-                    from scipy.optimize import brentq
-                    def _bubble_residual(T_val):
-                        Ks_v = _calc_Ks(components, T_val, P, x, method_used)
-                        return sum(Ks_v[i]*x[i] for i in range(n)) - 1.0
-                    T_lo, T_hi = min(T_curr, T_curr - 50), max(T_curr, T_curr + 50)
-                    T_lo = max(100.0, T_lo)
-                    T_hi = min(1200.0, T_hi)
-                    if _bubble_residual(T_lo) * _bubble_residual(T_hi) < 0:
-                        T_root = brentq(_bubble_residual, T_lo, T_hi, xtol=_tol)
-                        T_curr = T_root
-                        iter_count += 1
-                        break
-                except Exception:
-                    pass
-    Ks = _calc_Ks(components, T_curr, P, x, method_used)
-    y = [Ks[i]*x[i] for i in range(n)]
-    sum_y = sum(y)
-    if sum_y > 0:
-        y = [yi / sum_y for yi in y]
-    aze_near = all(abs(Ks[i] - 1.0) < 0.1 for i in range(n)) if n > 1 else False
-    return {"T": round(T_curr, 6), "T_C": round(T_curr-273.15, 6), "y": y, "K": Ks,
-            "method": method_used,
-            "converged": abs(sum(Ks[i]*x[i] for i in range(n)) - 1.0) < _tol,
-            "iterations": iter_count, "azeotrope_near": aze_near}
-
-
-def calc_dew_point_T(components: List[str], y: List[float], P: float,
-                     method: str = "auto", tol: float = 1e-4,
-                     max_iter: int = 200,
-                     precision: str = "normal") -> Dict:
-    """露点温度，返回 {T, T_C, x, K, method, converged, iterations}"""
-    n = len(components)
-    _tol_map = {"normal": 1e-4, "high": 1e-6, "ultra": 1e-8}
-    _tol = _tol_map.get(precision, tol)
-    method_used = _auto_k_method(components, 400.0, P) if method == "auto" else method
-    try:
-        m = Mixture(components, zs=y, P=P)
-        Td = float(m.Tdew)
-        return {"T": round(Td,4), "T_C": round(Td-273.15,4), "x": list(m.xs or []),
-                "K": [y[i]/m.xs[i] if m.xs[i] > 0 else 0 for i in range(n)],
-                "method": "Mixture", "converged": True, "iterations": 0}
-    except Exception:
-        pass
-    T_init = sum(y[i] * (get_normal_boiling_point(c) or 360.0) for i, c in enumerate(components))
-    T_init = max(100.0, min(1200.0, T_init))
-    T_prev, T_curr = T_init, T_init
-    f_prev = None
-    iter_count = 0
-    for iter_i in range(max_iter):
-        iter_count = iter_i + 1
-        Ks = _calc_Ks(components, T_curr, P, y, method_used)
-        sum_yK = sum(y[i]/Ks[i] for i in range(n))
-        f_curr = sum_yK - 1.0
-        if abs(f_curr) < _tol:
-            break
-        if f_prev is not None and abs(f_curr - f_prev) > 1e-12:
-            T_next = T_curr - f_curr * (T_curr - T_prev) / (f_curr - f_prev)
-        else:
-            T_next = T_curr - f_curr * T_curr * 0.03
-        T_next = max(100.0, min(1200.0, T_next))
-        T_prev, T_curr = T_curr, T_next
-        f_prev = f_curr
-    Ks = _calc_Ks(components, T_curr, P, y, method_used)
-    x = [y[i]/Ks[i] for i in range(n)]
-    sum_x = sum(x)
-    if sum_x > 0:
-        x = [xi / sum_x for xi in x]
-    return {"T": round(T_curr, 6), "T_C": round(T_curr-273.15, 6), "x": x, "K": Ks,
-            "method": method_used,
-            "converged": abs(sum(y[i]/Ks[i] for i in range(n)) - 1.0) < _tol,
-            "iterations": iter_count}
-
-
-def calc_bubble_point_P(components: List[str], x: List[float], T: float,
-                        method: str = "auto") -> Dict:
-    """泡点压力"""
-    try:
-        m = Mixture(components, zs=x, T=T)
-        Pb = float(m.Pbubble)
-        return {"P": Pb, "P_MPa": Pb/1e6,
-                "K": [m.ys[i]/x[i] if x[i]>0 else 0 for i in range(len(x))],
-                "method": "Mixture", "converged": True}
-    except Exception:
-        pass
-    Pb = sum(x[i] * (calc_vapor_pressure(components[i], T) or 0) for i in range(len(components)))
-    return {"P": Pb, "P_MPa": Pb/1e6, "K": [], "method": "Raoult", "converged": True}
-
-
-def calc_dew_point_P(components: List[str], y: List[float], T: float,
-                     method: str = "auto") -> Dict:
-    """露点压力"""
-    try:
-        m = Mixture(components, zs=y, T=T)
-        Pd = float(m.Pdew)
-        return {"P": Pd, "P_MPa": Pd/1e6,
-                "K": [y[i]/m.xs[i] if m.xs[i]>0 else 0 for i in range(len(y))],
-                "method": "Mixture", "converged": True}
-    except Exception:
-        pass
-    inv = sum(y[i]/(calc_vapor_pressure(components[i], T) or 1.0) for i in range(len(components)))
-    Pd = 1.0/inv if inv > 0 else 0.0
-    return {"P": Pd, "P_MPa": Pd/1e6, "K": [], "method": "Raoult", "converged": True}
-
-
-def calc_VLE_envelope(components: List[str], P: float,
-                      n_points: int = 20, method: str = "auto",
-                      precision: str = "normal") -> Dict:
-    """生成等压 VLE 包络线（泡点线 + 露点线）。"""
-    if len(components) != 2:
-        return {"error": "仅支持二元体系", "bubble_line": [], "dew_line": []}
-    c1, c2 = components
-    bubble_line, dew_line = [], []
-    x_vals = [i / (n_points - 1) for i in range(n_points)]
-    for xi in x_vals:
-        x = [xi, 1.0 - xi]
-        res_b = calc_bubble_point_T(components, x, P, method=method, precision=precision)
-        if res_b["converged"]:
-            bubble_line.append({"x": x, "T": res_b["T"], "T_C": res_b["T_C"],
-                                "y": res_b["y"], "K": res_b["K"]})
-    for yi in x_vals:
-        y = [yi, 1.0 - yi]
-        res_d = calc_dew_point_T(components, y, P, method=method, precision=precision)
-        if res_d["converged"]:
-            dew_line.append({"y": y, "T": res_d["T"], "T_C": res_d["T_C"],
-                             "x": res_d["x"], "K": res_d["K"]})
-    azeotrope = None
-    if bubble_line:
-        min_T_point = min(bubble_line, key=lambda p: p["T"])
-        min_T_C = min_T_point["T_C"]
-        T_pure = []
-        for xi in [0.0, 1.0]:
-            x = [xi, 1.0 - xi]
-            res = calc_bubble_point_T(components, x, P, method=method, precision=precision)
-            T_pure.append(res["T_C"])
-        if min_T_C < min(T_pure) - 0.5:
-            z_aze = min_T_point["x"]
-            azeotrope = {"T_C": min_T_C, "T": min_T_point["T"],
-                         "z": z_aze, "type": "minimum"}
-        else:
-            max_T_point = max(bubble_line, key=lambda p: p["T"])
-            max_T_C = max_T_point["T_C"]
-            if max_T_C > max(T_pure) + 0.5:
-                z_aze = max_T_point["x"]
-                azeotrope = {"T_C": max_T_C, "T": max_T_point["T"],
-                             "z": z_aze, "type": "maximum"}
-            else:
-                azeotrope = {"note": "未检测到明显共沸点"}
-    return {"bubble_line": bubble_line, "dew_line": dew_line,
-            "azeotrope": azeotrope, "P": P}
-
-
 def calc_flash_rachford_rice(components: List[str], z: List[float],
                              T: float, P: float,
                              method: str = "auto") -> Dict:
     """等温闪蒸 (Rachford-Rice), 返回 {beta, x, y, K, phase, method}"""
     n = len(components)
-    method_used = _auto_k_method(components, T, P) if method == "auto" else method
-    Ks = _calc_Ks(components, T, P, z, method_used)
+    # 直接使用 _calc_Ks（会自动选择方法）
+    Ks = _calc_Ks(components, T, P, z, method)
 
     def rr_eq(b):
         return sum(z[i]*(Ks[i]-1)/(1+b*(Ks[i]-1)) for i in range(n))
@@ -2289,9 +2593,9 @@ def calc_flash_rachford_rice(components: List[str], z: List[float],
     beta = 0.5
     K_min, K_max = min(Ks), max(Ks)
     if K_max <= 1.0:
-        return {"beta": 0.0, "x": list(z), "y": list(z), "K": Ks, "phase": "liquid", "method": method_used}
+        return {"beta": 0.0, "x": list(z), "y": list(z), "K": Ks, "phase": "liquid", "method": method}
     if K_min >= 1.0:
-        return {"beta": 1.0, "x": list(z), "y": list(z), "K": Ks, "phase": "vapor", "method": method_used}
+        return {"beta": 1.0, "x": list(z), "y": list(z), "K": Ks, "phase": "vapor", "method": method}
     try:
         from scipy.optimize import brentq
         lo = max(0.0, 1.0/(1.0-K_max)+1e-10)
@@ -2310,7 +2614,7 @@ def calc_flash_rachford_rice(components: List[str], z: List[float],
     if sx > 0: x = [v/sx for v in x]
     if sy > 0: y = [v/sy for v in y]
     phase = "liquid" if beta <= 0 else ("vapor" if beta >= 1 else "two_phase")
-    return {"beta": round(beta, 6), "x": x, "y": y, "K": Ks, "phase": phase, "method": method_used}
+    return {"beta": round(beta, 6), "x": x, "y": y, "K": Ks, "phase": phase, "method": method}
 
 
 # ============================================================
@@ -2566,7 +2870,8 @@ def get_mixture_properties(components: List[str], z: List[float],
     w = [z[i]*MWs[i]/MW_mix for i in range(n)] if MW_mix > 0 else list(z)
 
     k_method = _auto_k_method(components, T, P)
-    Ks = _calc_Ks(components, T, P, z, k_method)
+    # 用 "auto" 走降级循环: 首选方法失败时自动降级到范围更广的方法兜底
+    Ks = _calc_Ks(components, T, P, z, "auto")
 
     # EOS 混合密度
     rho_L_mix = rho_V_mix = Z_L_mix = Z_V_mix = None
@@ -2790,7 +3095,7 @@ if __name__ == "__main__":
     print("\n[Henry 常数修复验证] CO2 / O2 随温度应升高")
     for gname in ['CO2', 'O2']:
         print(f"  {gname}:")
-        for T in [273.15, 298.15, 323.15, 373.15]:
+        for T in [273.15, 298.15, 323.15]:
             H = calc_henry_constant(gname, T)
             print(f"    T={T:.2f}K  H_x={fmt(H,'.3e','Pa')}  ({fmt(H/101325 if H else None,'.0f')} atm)")
 
